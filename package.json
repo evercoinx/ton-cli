@@ -1,22 +1,35 @@
 {
-  "name": "toncli",
-  "version": "0.0.1",
-  "description": "",
-  "main": "bin/main.js",
-  "scripts": {
-    "walletinfo": "node oracle/wallet/index.js",
-    "deploy": "node oracle/wallet/deploy.js",
-    "transfer": "node oracle/wallet/transfer.js"
-  },
-  "bin": {
-    "toncli": "./bin/main.js"
-  },
-  "author": "Serge Grigorenko <serge@evercloud.io>",
-  "license": "NOLICENSE",
-  "dependencies": {
-    "dotenv": "14.3.2",
-    "tonweb": "0.0.27",
-    "tonweb-mnemonic": "1.0.0",
-    "yargs": "17.3.1"
-  }
+    "name": "toncli",
+    "version": "0.1.0",
+    "description": "Command line tools for TON blockchain",
+    "main": "bin/main.js",
+    "bin": {
+        "toncli": "./bin/main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/evercoinx/toncli"
+    },
+    "author": "Serge Grigorenko <serge@evercloud.io>",
+    "license": "UNLICENSED",
+    "private": true,
+    "engines": {
+        "node": ">=17",
+        "npm": ">=8"
+    },
+    "scripts": {
+        "prepare": "husky install",
+        "format": "prettier --write ."
+    },
+    "dependencies": {
+        "dotenv": "14.3.2",
+        "tonweb": "0.0.27",
+        "tonweb-mnemonic": "1.0.0",
+        "yargs": "17.3.1"
+    },
+    "devDependencies": {
+        "husky": "7.0.4",
+        "prettier": "2.5.1",
+        "pretty-quick": "3.1.3"
+    }
 }
