@@ -1,7 +1,6 @@
 const fs = require("fs").promises
 const tonMnemonic = require("tonweb-mnemonic")
 const { BN } = require("tonweb").utils
-const mnemonicData = require("../mnemonic.json")
 
 class Wallet {
     constructor(tonweb, workchain) {
@@ -11,8 +10,8 @@ class Wallet {
 
     async predeploy() {
         try {
-            const walletMnemonic = await tonMnemonic.generateMnemonic()
-            const keyPair = await tonMnemonic.mnemonicToKeyPair(walletMnemonic)
+            const mnemonic = await tonMnemonic.generateMnemonic()
+            const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
@@ -21,11 +20,7 @@ class Wallet {
 
             const address = await wallet.getAddress()
             const bouncableAddress = address.toString(true, true, true)
-            mnemonicData[bouncableAddress] = walletMnemonic
-            await fs.writeFile(
-                "mnemonic.json",
-                JSON.stringify(mnemonicData, null, 4),
-            )
+            await this.saveMnemonic(bouncableAddress, mnemonic)
 
             const deployRequest = await wallet.deploy(keyPair.secretKey)
 
@@ -43,21 +38,8 @@ class Wallet {
 
     async deploy(walletAddress) {
         try {
-            const walletMnemonic = mnemonicData[walletAddress]
-            if (!walletMnemonic) {
-                console.error(`Error! Wallet mnemonic is not found`)
-                return
-            }
-
-            const validMnemonic = await tonMnemonic.validateMnemonic(
-                walletMnemonic,
-            )
-            if (!validMnemonic) {
-                console.error(`Error! Mnemonic is invalid`)
-                return
-            }
-
-            const keyPair = await tonMnemonic.mnemonicToKeyPair(walletMnemonic)
+            const mnemonic = await this.loadMnemonic(walletAddress)
+            const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
@@ -90,14 +72,14 @@ class Wallet {
                 `- Bouncable address: ${address.toString(true, true, true)}`,
             )
             console.log(
-                `- Non bouncable address: ${address.toString(
+                `- Non-bouncable address: ${address.toString(
                     true,
                     true,
                     false,
                 )}`,
             )
             console.log(`- Balance: ${this.formatAmount(balance)}`)
-            console.log(`- Sequence number: ${seqno}`)
+            console.log(`- Sequence number: ${seqno || "0"}`)
         } catch (err) {
             console.error(`Error! ${err}`)
         }
@@ -105,21 +87,8 @@ class Wallet {
 
     async transfer(sender, recipient, amount) {
         try {
-            const senderMnemonic = mnemonicData[sender]
-            if (!senderMnemonic) {
-                console.error(`Error! Sender mnemonic is not found`)
-                return
-            }
-
-            const validMnemonic = await tonMnemonic.validateMnemonic(
-                senderMnemonic,
-            )
-            if (!validMnemonic) {
-                console.error(`Error! Mnemonic is invalid`)
-                return
-            }
-
-            const keyPair = await tonMnemonic.mnemonicToKeyPair(senderMnemonic)
+            const mnemonic = await this.loadMnemonic(sender)
+            const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
@@ -129,12 +98,11 @@ class Wallet {
             const amountNano = this.tonweb.utils.toNano(amount)
             const senderBalance = await this.tonweb.getBalance(sender)
             if (amountNano.gt(new BN(senderBalance))) {
-                console.error(
+                throw new Error(
                     `Error! Transfer amount ${this.formatAmount(
                         amountNano,
                     )} exceeds balance ${this.formatAmount(senderBalance)}`,
                 )
-                return
             }
 
             const seqno = await wallet.methods.seqno().call()
@@ -160,6 +128,31 @@ class Wallet {
         } catch (err) {
             console.error(`Error! ${err}`)
         }
+    }
+
+    async saveMnemonic(address, newMnemonic) {
+        const fileContents = await fs.readFile("../mnemonic.json")
+        const mnemonic = JSON.parse(fileContents)
+
+        mnemonic[address] = newMnemonic
+        await fs.writeFile("mnemonic.json", JSON.stringify(mnemonic, null, 4))
+    }
+
+    async loadMnemonic(address) {
+        const fileContents = await fs.readFile("../mnemonic.json")
+        const mnemonic = JSON.parse(fileContents)
+
+        const walletMnemonic = mnemonic[address]
+        if (!walletMnemonic) {
+            throw new Error(`Wallet mnemonic is not found`)
+        }
+
+        const validMnemonic = await tonMnemonic.validateMnemonic(walletMnemonic)
+        if (!validMnemonic) {
+            throw new Error(`Mnemonic is invalid`)
+        }
+
+        return mnemonic
     }
 
     formatAmount(amount) {
