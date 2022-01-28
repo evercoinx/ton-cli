@@ -1,49 +1,63 @@
 const fs = require("fs").promises
 const tonMnemonic = require("tonweb-mnemonic")
-const { BN } = require("tonweb").utils
+const { BN, Address } = require("tonweb").utils
 
 class Wallet {
-    constructor(tonweb, workchain) {
+    constructor(tonweb) {
         this.tonweb = tonweb
-        this.workchain = workchain
+        this.mnemonicFilename = "mnemonic.json"
     }
 
-    async predeploy() {
+    async predeploy(workchain) {
         try {
+            console.log(`\nWallet predeployment operation:`)
+
             const mnemonic = await tonMnemonic.generateMnemonic()
             const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
-                wc: this.workchain,
+                wc: workchain,
             })
 
             const address = await wallet.getAddress()
-            const bouncableAddress = address.toString(true, true, true)
-            await this.saveMnemonic(bouncableAddress, mnemonic)
+            const bounceableAddress = address.toString(true, true, true)
+            await this.saveMnemonic(bounceableAddress, mnemonic)
 
             const deployRequest = await wallet.deploy(keyPair.secretKey)
 
             const feeResponse = await deployRequest.estimateFee()
             this.printFees(feeResponse)
 
-            const nonBouncableAddress = address.toString(true, true, false)
+            const nonBounceableAddress = address.toString(true, true, false)
             console.log(
-                `Wallet is ready to be deployed at ${nonBouncableAddress}`,
+                `Wallet is ready to be deployed at ${nonBounceableAddress}`,
             )
         } catch (err) {
-            console.error(`Error! ${err}`)
+            console.error(`Error! ${err.message}`)
         }
     }
 
-    async deploy(walletAddress) {
+    async deploy(address) {
         try {
-            const mnemonic = await this.loadMnemonic(walletAddress)
+            console.log(`\nWallet deployment operation:`)
+
+            const walletAddress = new Address(address)
+            if (!walletAddress.isUserFriendly) {
+                throw new Error(
+                    `Wallet address should be in user friendly format`,
+                )
+            }
+            if (!walletAddress.isBounceable) {
+                throw new Error(`Wallet address should be bounceable`)
+            }
+
+            const mnemonic = await this.loadMnemonic(address)
             const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
-                wc: this.workchain,
+                wc: walletAddress.wc,
             })
 
             const deployRequest = await wallet.deploy(keyPair.secretKey)
@@ -52,54 +66,96 @@ class Wallet {
             this.printFees(feeResponse)
 
             const response = await deployRequest.send()
-            this.printResponse(response, `Wallet was deployed successfully`)
+            if (response["@type"] !== "ok") {
+                throw new Error(
+                    `Code: ${response.code}, message: ${response.message}`,
+                )
+            }
+            console.log(`Wallet was deployed successfully`)
         } catch (err) {
-            console.error(`Error! ${err}`)
+            console.error(`Error! ${err.message}`)
         }
     }
 
-    async info(walletAddress) {
+    async info(address) {
         try {
-            const wallet = this.tonweb.wallet.create({ address: walletAddress })
-
-            const address = await wallet.getAddress()
-            const seqno = await wallet.methods.seqno().call()
-            const balance = await this.tonweb.getBalance(walletAddress)
-
             console.log(`\nWallet information:`)
-            console.log(`- Raw address: ${address.toString(false, true, true)}`)
+
+            const walletAddress = new Address(address)
+            const wallet = this.tonweb.wallet.create({
+                address: walletAddress,
+            })
+
+            const seqno = await wallet.methods.seqno().call()
+            const balance = await this.tonweb.getBalance(address)
+
             console.log(
-                `- Bouncable address: ${address.toString(true, true, true)}`,
+                `- New wallet address: ${walletAddress.toString(
+                    false,
+                    true,
+                    true,
+                )}`,
             )
             console.log(
-                `- Non-bouncable address: ${address.toString(
+                `- Non-bounceable address (for init):     ${walletAddress.toString(
                     true,
                     true,
                     false,
                 )}`,
             )
+            console.log(
+                `- Bounceable address (for later access): ${walletAddress.toString(
+                    true,
+                    true,
+                    true,
+                )}`,
+            )
             console.log(`- Balance: ${this.formatAmount(balance)}`)
             console.log(`- Sequence number: ${seqno || "0"}`)
         } catch (err) {
-            console.error(`Error! ${err}`)
+            console.error(`Error! ${err.message}`)
         }
     }
 
-    async transfer(sender, recipient, amount) {
+    async transfer(sender, recipient, amount, stateinit, memo) {
         try {
+            console.log(`\nTransfer operation between wallets:`)
+
+            const recipientAddress = new Address(recipient)
+            if (!recipientAddress.isUserFriendly) {
+                throw new Error(
+                    `Recipient's wallet address should be in user friendly format`,
+                )
+            }
+
+            if (stateinit && recipientAddress.isBounceable) {
+                throw new Error(
+                    `Recipient's wallet address should be non-bounceable for state init operation`,
+                )
+            }
+
+            if (!stateinit && !recipientAddress.isBounceable) {
+                throw new Error(
+                    `Recipient's wallet address should be bounceable for any not state init operation`,
+                )
+            }
+
+            if (amount < 0) {
+                throw new Error(`Amount should be positive`)
+            }
+
             const mnemonic = await this.loadMnemonic(sender)
             const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
             const wallet = this.tonweb.wallet.create({
                 publicKey: keyPair.publicKey,
-                wc: this.workchain,
             })
 
             const amountNano = this.tonweb.utils.toNano(amount)
             const senderBalance = await this.tonweb.getBalance(sender)
             if (amountNano.gt(new BN(senderBalance))) {
                 throw new Error(
-                    `Error! Transfer amount ${this.formatAmount(
+                    `Transfer amount ${this.formatAmount(
                         amountNano,
                     )} exceeds balance ${this.formatAmount(senderBalance)}`,
                 )
@@ -108,51 +164,56 @@ class Wallet {
             const seqno = await wallet.methods.seqno().call()
             const transferRequest = wallet.methods.transfer({
                 secretKey: keyPair.secretKey,
-                toAddress: recipient,
+                toAddress: recipientAddress,
                 amount: amountNano,
-                seqno: seqno,
-                payload: "Transfer",
+                seqno,
+                payload: memo,
                 sendMode: 3,
             })
 
             const feeResponse = await transferRequest.estimateFee()
             this.printFees(feeResponse)
 
-            const transferResponse = await transferRequest.send()
-            this.printResponse(
-                transferResponse,
+            const response = await transferRequest.send()
+            if (response["@type"] !== "ok") {
+                throw new Error(
+                    `Code: ${response.code}, message: ${response.message}`,
+                )
+            }
+            console.log(
                 `${this.formatAmount(
                     amountNano,
                 )} were transferred successfully`,
             )
         } catch (err) {
-            console.error(`Error! ${err}`)
+            console.error(`Error! ${err.message}`)
         }
     }
 
     async saveMnemonic(address, newMnemonic) {
-        const fileContents = await fs.readFile("../mnemonic.json")
+        const fileContents = await fs.readFile(this.mnemonicFilename)
         const mnemonic = JSON.parse(fileContents)
 
         mnemonic[address] = newMnemonic
-        await fs.writeFile("mnemonic.json", JSON.stringify(mnemonic, null, 4))
+        await fs.writeFile(filename, JSON.stringify(mnemonic, null, 4))
+        console.log(`Wallet mnemonic was saved to ${filename} file`)
     }
 
     async loadMnemonic(address) {
-        const fileContents = await fs.readFile("../mnemonic.json")
+        const fileContents = await fs.readFile(this.mnemonicFilename)
         const mnemonic = JSON.parse(fileContents)
 
-        const walletMnemonic = mnemonic[address]
-        if (!walletMnemonic) {
-            throw new Error(`Wallet mnemonic is not found`)
+        const addressMnemonic = mnemonic[address]
+        if (!addressMnemonic) {
+            throw new Error(`Address mnemonic is not found`)
         }
 
-        const validMnemonic = await tonMnemonic.validateMnemonic(walletMnemonic)
-        if (!validMnemonic) {
-            throw new Error(`Mnemonic is invalid`)
+        const valid = await tonMnemonic.validateMnemonic(addressMnemonic)
+        if (!valid) {
+            throw new Error(`Address mnemonic is invalid`)
         }
 
-        return mnemonic
+        return addressMnemonic
     }
 
     formatAmount(amount) {
@@ -161,10 +222,9 @@ class Wallet {
 
     printFees(response) {
         if (response["@type"] !== "query.fees") {
-            console.error(
-                `Error! Code: ${response.code}, message: ${response.message}`,
+            throw new Error(
+                `Code: ${response.code}, message: ${response.message}`,
             )
-            return
         }
 
         const fees = response["source_fees"]
@@ -179,15 +239,7 @@ class Wallet {
         )
     }
 
-    printResponse(response, successMessage) {
-        if (response["@type"] !== "ok") {
-            console.error(
-                `Error! Code: ${response.code}, message: ${response.message}`,
-            )
-            return
-        }
-        console.log(successMessage)
-    }
+    printResponse(response, successMessage) {}
 }
 
 module.exports = Wallet
