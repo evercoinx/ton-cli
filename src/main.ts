@@ -1,26 +1,27 @@
 #!/usr/bin/env node
 
-require("dotenv").config();
-const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
-const TonWeb2 = require("tonweb");
-const Wallet2 = require("./wallet.js");
+import "dotenv/config";
+import yargs, { Argv } from "yargs";
+import { hideBin } from "yargs/helpers";
+import Wallet from "./wallet";
 
-const { HttpProvider } = TonWeb2;
+const TonWeb = require("tonweb");
+const { HttpProvider } = TonWeb;
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST);
-const tonweb = new TonWeb2(provider);
+const tonweb = new TonWeb(provider);
+
 tonweb.wallet.defaultVersion = "v3R2";
 
-const wallet = new Wallet2(tonweb);
-
 (async () => {
+    const wallet = new Wallet(tonweb);
+
     yargs(hideBin(process.argv))
         .usage("$0 <cmd> [args]")
         .command({
             command: "walletpredeploy [wc]",
             aliases: ["wp"],
             describe: "Predeploy wallet",
-            builder: (yargs: any) =>
+            builder: (yargs: Argv) =>
                 yargs
                     .positional("wc", {
                         describe: "Workchain id. Defaults to 0",
@@ -36,7 +37,7 @@ const wallet = new Wallet2(tonweb);
             command: "walletdeploy <address>",
             aliases: ["wd"],
             describe: "Deploy wallet",
-            builder: (yargs: any) =>
+            builder: (yargs: Argv) =>
                 yargs.positional("address", {
                     describe: "Wallet address",
                 }),
@@ -49,7 +50,7 @@ const wallet = new Wallet2(tonweb);
             command: "walletinfo <address>",
             aliases: ["wi"],
             describe: "Get wallet information",
-            builder: (yargs: any) =>
+            builder: (yargs: Argv) =>
                 yargs.positional("address", {
                     describe: "Wallet address",
                 }),
@@ -63,7 +64,7 @@ const wallet = new Wallet2(tonweb);
                 "wallettransfer <sender> <recipient> <amount> [stateinit] [memo]",
             aliases: ["wt"],
             describe: "Transfer toncoins",
-            builder: (yargs: any) =>
+            builder: (yargs: Argv) =>
                 yargs
                     .positional("sender", {
                         describe: "Sender's wallet address",
@@ -74,13 +75,13 @@ const wallet = new Wallet2(tonweb);
                     .positional("amount", {
                         describe: "Amount to transfer",
                     })
-                    .coerce("amount", (opt: any) => parseFloat(opt))
+                    .coerce("amount", (opt: string) => parseFloat(opt))
                     .positional("stateinit", {
                         describe:
                             "Check if address should be non-bounceable for stateinit operation",
                         default: false,
                     })
-                    .coerce("stateinit", (opt: any) => !!parseInt(opt))
+                    .coerce("stateinit", (opt: string) => !!parseInt(opt))
                     .positional("memo", {
                         describe: "Transaction memo",
                         default: "",
