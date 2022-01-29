@@ -1,7 +1,7 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import AbstractLifecycle, { NodeResponse, FeeResponse } from "./abstract"
+import AbstractLifecycle, { CommonResponse, FeeResponse } from "./abstract"
 import Lottery from "../contract/lottery"
 
 const { Address } = TonWeb.utils
@@ -68,7 +68,7 @@ class LotteryLifecycle extends AbstractLifecycle {
 			const feeResponse: FeeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: NodeResponse = await deployRequest.send()
+			const response: CommonResponse = await deployRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
 					`Code: ${response.code}, message: ${response.message}`,
@@ -92,29 +92,9 @@ class LotteryLifecycle extends AbstractLifecycle {
 			const seqno: number | null = await lottery.methods.seqno().call()
 			const balance = await this.tonweb.getBalance(address)
 
-			console.log(
-				`- Raw lottery address: ${lotteryAddress.toString(
-					false,
-					true,
-					true,
-				)}`,
-			)
-			console.log(
-				`- Non-bounceable address (for init):     ${lotteryAddress.toString(
-					true,
-					true,
-					false,
-				)}`,
-			)
-			console.log(
-				`- Bounceable address (for later access): ${lotteryAddress.toString(
-					true,
-					true,
-					true,
-				)}`,
-			)
+			this.printAddressInfo(lotteryAddress)
 			console.log(`- Balance: ${this.formatAmount(balance)}`)
-			console.log(`- Sequence number: ${seqno || "0"}`)
+			console.log(`- Sequence number: ${seqno}`)
 		} catch (err: unknown) {
 			this.printError(err)
 		}

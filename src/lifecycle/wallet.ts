@@ -1,7 +1,7 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import AbstractLifecycle, { NodeResponse, FeeResponse } from "./abstract"
+import AbstractLifecycle, { CommonResponse, FeeResponse } from "./abstract"
 
 const { BN, Address } = TonWeb.utils
 
@@ -69,7 +69,7 @@ class WalletLifecycle extends AbstractLifecycle {
 			const feeResponse: FeeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: NodeResponse = await deployRequest.send()
+			const response: CommonResponse = await deployRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
 					`Code: ${response.code}, message: ${response.message}`,
@@ -93,29 +93,9 @@ class WalletLifecycle extends AbstractLifecycle {
 			const seqno: number | null = await wallet.methods.seqno().call()
 			const balance = await this.tonweb.getBalance(address)
 
-			console.log(
-				`- Raw wallet address: ${walletAddress.toString(
-					false,
-					true,
-					true,
-				)}`,
-			)
-			console.log(
-				`- Non-bounceable address (for init):     ${walletAddress.toString(
-					true,
-					true,
-					false,
-				)}`,
-			)
-			console.log(
-				`- Bounceable address (for later access): ${walletAddress.toString(
-					true,
-					true,
-					true,
-				)}`,
-			)
+			this.printAddressInfo(walletAddress)
 			console.log(`- Balance: ${this.formatAmount(balance)}`)
-			console.log(`- Sequence number: ${seqno || "0"}`)
+			console.log(`- Sequence number: ${seqno}`)
 		} catch (err: unknown) {
 			this.printError(err)
 		}
@@ -188,7 +168,7 @@ class WalletLifecycle extends AbstractLifecycle {
 			const feeResponse: FeeResponse = await transferRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: NodeResponse = await transferRequest.send()
+			const response: CommonResponse = await transferRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
 					`Code: ${response.code}, message: ${response.message}`,

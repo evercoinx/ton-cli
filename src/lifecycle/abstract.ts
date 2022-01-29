@@ -2,27 +2,40 @@ import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
+const { Address } = TonWeb.utils
+
 interface AddressToMnemonic {
 	[key: string]: string[]
 }
 
-export interface NodeResponse {
-	"@type": string
-	code?: string
-	message?: string
+interface CommonSuccessResponse {
+	"@type": "ok"
+	"@extra": string
 }
 
-interface Fees {
-	gas_fee: number
-	in_fwd_fee: number
-	fwd_fee: number
-	storage_fee: number
+interface ErrorResponse {
+	"@type": "error"
+	code: string
+	message: string
+	"@extra": string
 }
 
-export interface FeeResponse extends NodeResponse {
-	source_fees: Fees
-	target_fees: Fees
+export type CommonResponse = CommonSuccessResponse | ErrorResponse
+
+interface FeeSuccessResponse {
+	"@type": "query.fees"
+	source_fees: {
+		"@type": "fees"
+		gas_fee: number
+		in_fwd_fee: number
+		fwd_fee: number
+		storage_fee: number
+	}
+	destination_fees: unknown[]
+	"@extra": string
 }
+
+export type FeeResponse = FeeSuccessResponse | ErrorResponse
 
 abstract class AbstractLifecycle {
 	static mnemonicFilename = "mnemonic.json"
@@ -77,10 +90,28 @@ abstract class AbstractLifecycle {
 		return `${this.tonweb.utils.fromNano(amount)} TON`
 	}
 
+	protected printAddressInfo(address: typeof Address): void {
+		console.log(`- Raw address: ${address.toString(false, true, true)}`)
+		console.log(
+			`- Non-bounceable address (for init):     ${address.toString(
+				true,
+				true,
+				false,
+			)}`,
+		)
+		console.log(
+			`- Bounceable address (for later access): ${address.toString(
+				true,
+				true,
+				true,
+			)}`,
+		)
+	}
+
 	protected printFees(response: FeeResponse): void {
 		if (response["@type"] !== "query.fees") {
 			throw new Error(
-				`Code: ${response.code}, message: ${response.message}`,
+				`code: ${response.code}, message: ${response.message}`,
 			)
 		}
 
