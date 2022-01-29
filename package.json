@@ -17,7 +17,9 @@
     "scripts": {
         "prepare": "husky install",
         "format": "prettier --write src",
-        "build": "tsc -p ."
+        "lint": "eslint src --ext ts",
+        "build": "tsc -p .",
+        "start": "npm run build && node ."
     },
     "dependencies": {
         "dotenv": "14.3.2",
@@ -28,6 +30,14 @@
     "devDependencies": {
         "@types/node": "17.0.13",
         "@types/yargs": "17.0.8",
+        "@typescript-eslint/eslint-plugin": "5.10.1",
+        "@typescript-eslint/parser": "5.10.1",
+        "eslint": "7.32.0",
+        "eslint-config-prettier": "8.3.0",
+        "eslint-config-standard": "16.0.3",
+        "eslint-plugin-import": "2.25.4",
+        "eslint-plugin-node": "11.1.0",
+        "eslint-plugin-promise": "5.2.0",
         "husky": "7.0.4",
         "prettier": "2.5.1",
         "pretty-quick": "3.1.3",
