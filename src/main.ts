@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-
 import "dotenv/config";
 import yargs, { Argv } from "yargs";
 import { hideBin } from "yargs/helpers";
+import TonWeb from "tonweb";
+
 import Wallet from "./wallet";
 
-const TonWeb = require("tonweb");
 const { HttpProvider } = TonWeb;
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST);
 const tonweb = new TonWeb(provider);
@@ -18,9 +18,9 @@ tonweb.wallet.defaultVersion = "v3R2";
     yargs(hideBin(process.argv))
         .usage("$0 <cmd> [args]")
         .command({
-            command: "walletpredeploy [wc]",
+            command: "walletprepare [wc]",
             aliases: ["wp"],
-            describe: "Predeploy wallet",
+            describe: "Prepare wallet",
             builder: (yargs: Argv) =>
                 yargs
                     .positional("wc", {
@@ -30,7 +30,7 @@ tonweb.wallet.defaultVersion = "v3R2";
                     .coerce("wc", (opt: string) => parseInt(opt)),
             handler: async (argv: any) => {
                 const { wc } = argv;
-                await wallet.predeploy(wc);
+                await wallet.prepare(wc);
             },
         })
         .command({

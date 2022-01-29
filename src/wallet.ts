@@ -1,7 +1,8 @@
 import fs from "fs/promises";
 
-const tonMnemonic = require("tonweb-mnemonic");
-const TonWeb = require("tonweb");
+import tonMnemonic from "tonweb-mnemonic";
+import TonWeb from "tonweb";
+
 const { BN, Address } = TonWeb.utils;
 
 interface AddressToMnemonic {
@@ -14,27 +15,26 @@ interface BaseResponse {
     message?: string;
 }
 
+interface Fees {
+    gas_fee: number;
+    in_fwd_fee: number;
+    fwd_fee: number;
+    storage_fee: number;
+}
+
 interface FeeResponse extends BaseResponse {
-    source_fees: {
-        gas_fee: number;
-        in_fwd_fee: number;
-        fwd_fee: number;
-        storage_fee: number;
-    };
+    source_fees: Fees;
+    target_fees: Fees;
 }
 
 class Wallet {
-    tonweb: typeof TonWeb;
-    mnemonicFilename: string;
+    static mnemonicFilename = "mnemonic.json";
 
-    constructor(tonweb: typeof TonWeb) {
-        this.tonweb = tonweb;
-        this.mnemonicFilename = "mnemonic.json";
-    }
+    public constructor(private tonweb: typeof TonWeb) {}
 
-    async predeploy(workchain: number): Promise<void> {
+    public async prepare(workchain: number): Promise<void> {
         try {
-            console.log(`\nWallet predeployment operation:`);
+            console.log(`\nWallet preparation operation:`);
 
             const mnemonic = await tonMnemonic.generateMnemonic();
             const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic);
@@ -62,7 +62,7 @@ class Wallet {
         }
     }
 
-    async deploy(address: string): Promise<void> {
+    public async deploy(address: string): Promise<void> {
         try {
             console.log(`\nWallet deployment operation:`);
 
@@ -101,7 +101,7 @@ class Wallet {
         }
     }
 
-    async info(address: string): Promise<void> {
+    public async info(address: string): Promise<void> {
         try {
             console.log(`\nWallet information:`);
 
@@ -141,7 +141,7 @@ class Wallet {
         }
     }
 
-    async transfer(
+    public async transfer(
         sender: string,
         recipient: string,
         amount: number,
@@ -193,7 +193,7 @@ class Wallet {
 
             const seqno: number | null = await wallet.methods.seqno().call();
             if (seqno == null) {
-                throw new Error(`Wallet sequence number is undefined`)
+                throw new Error(`Wallet sequence number is undefined`);
             }
 
             const transferRequest = wallet.methods.transfer({
@@ -225,22 +225,25 @@ class Wallet {
         }
     }
 
-    async saveMnemonic(address: string, newMnemonic: string[]): Promise<void> {
-        const fileContents = await fs.readFile(this.mnemonicFilename);
+    private async saveMnemonic(
+        address: string,
+        newMnemonic: string[],
+    ): Promise<void> {
+        const fileContents = await fs.readFile(Wallet.mnemonicFilename);
         const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString());
 
         mnemonic[address] = newMnemonic;
         await fs.writeFile(
-            this.mnemonicFilename,
+            Wallet.mnemonicFilename,
             JSON.stringify(mnemonic, null, 4),
         );
         console.log(
-            `Wallet mnemonic was saved to ${this.mnemonicFilename} file`,
+            `Wallet mnemonic was saved to ${Wallet.mnemonicFilename} file`,
         );
     }
 
-    async loadMnemonic(address: string): Promise<string[]> {
-        const fileContents = await fs.readFile(this.mnemonicFilename);
+    private async loadMnemonic(address: string): Promise<string[]> {
+        const fileContents = await fs.readFile(Wallet.mnemonicFilename);
         const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString());
 
         const addressMnemonic = mnemonic[address];
@@ -256,11 +259,11 @@ class Wallet {
         return addressMnemonic;
     }
 
-    formatAmount(amount: number): string {
+    private formatAmount(amount: number): string {
         return `${this.tonweb.utils.fromNano(amount)} TON`;
     }
 
-    printFees(response: FeeResponse): void {
+    private printFees(response: FeeResponse): void {
         if (response["@type"] !== "query.fees") {
             throw new Error(
                 `Code: ${response.code}, message: ${response.message}`,
