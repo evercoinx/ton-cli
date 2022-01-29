@@ -1,36 +1,16 @@
-import fs from "fs/promises"
-
-import tonMnemonic from "tonweb-mnemonic"
+import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
+
+import AbstractLifecycle, { NodeResponse, FeeResponse } from "./abstract"
 
 const { BN, Address } = TonWeb.utils
 
-interface AddressToMnemonic {
-	[key: string]: string[]
-}
-
-interface BaseResponse {
-	"@type": string
-	code?: string
-	message?: string
-}
-
-interface Fees {
-	gas_fee: number
-	in_fwd_fee: number
-	fwd_fee: number
-	storage_fee: number
-}
-
-interface FeeResponse extends BaseResponse {
-	source_fees: Fees
-	target_fees: Fees
-}
-
-class Wallet {
+class WalletLifecycle extends AbstractLifecycle {
 	static mnemonicFilename = "mnemonic.json"
 
-	public constructor(private tonweb: typeof TonWeb) {}
+	public constructor(protected tonweb: typeof TonWeb) {
+		super(tonweb)
+	}
 
 	public async prepare(workchain: number): Promise<void> {
 		try {
@@ -89,7 +69,7 @@ class Wallet {
 			const feeResponse: FeeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: BaseResponse = await deployRequest.send()
+			const response: NodeResponse = await deployRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
 					`Code: ${response.code}, message: ${response.message}`,
@@ -114,7 +94,7 @@ class Wallet {
 			const balance = await this.tonweb.getBalance(address)
 
 			console.log(
-				`- New wallet address: ${walletAddress.toString(
+				`- Raw wallet address: ${walletAddress.toString(
 					false,
 					true,
 					true,
@@ -208,7 +188,7 @@ class Wallet {
 			const feeResponse: FeeResponse = await transferRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: BaseResponse = await transferRequest.send()
+			const response: NodeResponse = await transferRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
 					`Code: ${response.code}, message: ${response.message}`,
@@ -223,64 +203,6 @@ class Wallet {
 			this.printError(err)
 		}
 	}
-
-	private async saveMnemonic(
-		address: string,
-		newMnemonic: string[],
-	): Promise<void> {
-		const fileContents = await fs.readFile(Wallet.mnemonicFilename)
-		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
-
-		mnemonic[address] = newMnemonic
-		await fs.writeFile(
-			Wallet.mnemonicFilename,
-			JSON.stringify(mnemonic, null, 4),
-		)
-		console.log(
-			`Wallet mnemonic was saved to ${Wallet.mnemonicFilename} file`,
-		)
-	}
-
-	private async loadMnemonic(address: string): Promise<string[]> {
-		const fileContents = await fs.readFile(Wallet.mnemonicFilename)
-		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
-
-		const addressMnemonic = mnemonic[address]
-		if (!addressMnemonic) {
-			throw new Error(`Address mnemonic is not found`)
-		}
-
-		const valid = await tonMnemonic.validateMnemonic(addressMnemonic)
-		if (!valid) {
-			throw new Error(`Address mnemonic is invalid`)
-		}
-
-		return addressMnemonic
-	}
-
-	private formatAmount(amount: number): string {
-		return `${this.tonweb.utils.fromNano(amount)} TON`
-	}
-
-	private printFees(response: FeeResponse): void {
-		if (response["@type"] !== "query.fees") {
-			throw new Error(
-				`Code: ${response.code}, message: ${response.message}`,
-			)
-		}
-
-		const fees = response.source_fees
-		console.log(`Fees:`)
-		console.log(`- Gas fee:        ${this.formatAmount(fees.gas_fee)}`)
-		console.log(`- In-Forward fee: ${this.formatAmount(fees.in_fwd_fee)}`)
-		console.log(`- Forward fee:    ${this.formatAmount(fees.fwd_fee)}`)
-		console.log(`- Storage fee:    ${this.formatAmount(fees.storage_fee)}`)
-	}
-
-	printError(err: unknown) {
-		const message = err instanceof Error ? err.message : err
-		console.error(`Error! ${message}`)
-	}
 }
 
-export default Wallet
+export default WalletLifecycle

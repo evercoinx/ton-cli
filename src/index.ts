@@ -4,7 +4,8 @@ import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
 import TonWeb from "tonweb"
 
-import Wallet from "./wallet"
+import WalletLifecycle from "./lifecycle/wallet"
+import LotteryLifecycle from "./lifecycle/lottery"
 
 const { HttpProvider } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
@@ -12,7 +13,8 @@ const tonweb = new TonWeb(provider)
 
 tonweb.wallet.defaultVersion = "v3R2"
 ;(async () => {
-	const wallet = new Wallet(tonweb)
+	const walletLifecycle = new WalletLifecycle(tonweb)
+	const lotteryLifecycle = new LotteryLifecycle(tonweb)
 
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
@@ -29,7 +31,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 					.coerce("wc", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
 				const { wc } = argv
-				await wallet.prepare(wc)
+				await walletLifecycle.prepare(wc)
 			},
 		})
 		.command({
@@ -42,7 +44,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await wallet.deploy(address)
+				await walletLifecycle.deploy(address)
 			},
 		})
 		.command({
@@ -55,7 +57,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await wallet.info(address)
+				await walletLifecycle.info(address)
 			},
 		})
 		.command({
@@ -87,13 +89,55 @@ tonweb.wallet.defaultVersion = "v3R2"
 					}),
 			handler: async (argv: any) => {
 				const { sender, recipient, amount, stateinit, memo } = argv
-				await wallet.transfer(
+				await walletLifecycle.transfer(
 					sender,
 					recipient,
 					amount,
 					stateinit,
 					memo,
 				)
+			},
+		})
+		.command({
+			command: "lotteryprepare [wc]",
+			aliases: ["lp"],
+			describe: "Prepare lottery",
+			builder: (yargs: Argv) =>
+				yargs
+					.positional("wc", {
+						describe: "Workchain id. Defaults to 0",
+						default: 0,
+					})
+					.coerce("wc", (opt: string) => parseInt(opt)),
+			handler: async (argv: any) => {
+				const { wc } = argv
+				await lotteryLifecycle.prepare(wc)
+			},
+		})
+		.command({
+			command: "lotterydeploy <address>",
+			aliases: ["ld"],
+			describe: "Deploy lottery",
+			builder: (yargs: Argv) =>
+				yargs.positional("address", {
+					describe: "Lottery address",
+				}),
+			handler: async (argv: any) => {
+				const { address } = argv
+				await lotteryLifecycle.deploy(address)
+			},
+		})
+		.command({
+			command: "lotteryinfo <address>",
+			aliases: ["li"],
+			describe: "Get lottery information",
+			builder: (yargs: Argv) =>
+				yargs.positional("address", {
+					describe: "Wallet address",
+				}),
+			handler: async (argv: any) => {
+				const { address } = argv
+				await lotteryLifecycle.info(address)
 			},
 		})
 		.strictCommands()

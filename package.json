@@ -2,7 +2,7 @@
     "name": "toncli",
     "version": "0.1.0",
     "description": "Command line tools for TON blockchain",
-    "main": "dist/main.js",
+    "main": "dist/index.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/evercoinx/toncli"
