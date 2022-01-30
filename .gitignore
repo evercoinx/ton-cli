@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 dist/
+!dist/.gitkeep
 node_modules/
 .env
 mnemonic*.json

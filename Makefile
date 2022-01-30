@@ -7,7 +7,6 @@ FIFT_CONTRACT_PATH = dist/example.fif
 all: compile boc
 
 compile:
-	rm -f $(FIFT_CONTRACT_PATH)
 	func -AP -o $(FIFT_CONTRACT_PATH) $(FUNC_LIB_PATH) $(FUNC_CONTRACT_PATH)
 	sed -i '$ s/}END>c/}END>c\ndup <s csr.\n2 boc+>B Bx. cr/' $(FIFT_CONTRACT_PATH)
 

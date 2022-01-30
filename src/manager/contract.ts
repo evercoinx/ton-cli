@@ -37,7 +37,7 @@ interface FeeSuccessResponse {
 
 export type FeeResponse = FeeSuccessResponse | ErrorResponse
 
-abstract class AbstractContractManager {
+abstract class ContractManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(protected tonweb: typeof TonWeb) {}
@@ -52,25 +52,21 @@ abstract class AbstractContractManager {
 		address: string,
 		newMnemonic: string[],
 	): Promise<void> {
-		const fileContents = await fs.readFile(
-			AbstractContractManager.mnemonicFilename,
-		)
+		const fileContents = await fs.readFile(ContractManager.mnemonicFilename)
 		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
 
 		mnemonic[address] = newMnemonic
 		await fs.writeFile(
-			AbstractContractManager.mnemonicFilename,
+			ContractManager.mnemonicFilename,
 			JSON.stringify(mnemonic, null, 4),
 		)
 		console.log(
-			`Wallet mnemonic was saved to ${AbstractContractManager.mnemonicFilename} file`,
+			`Address mnemonic was saved to ${ContractManager.mnemonicFilename}`,
 		)
 	}
 
 	protected async loadMnemonic(address: string): Promise<string[]> {
-		const fileContents = await fs.readFile(
-			AbstractContractManager.mnemonicFilename,
-		)
+		const fileContents = await fs.readFile(ContractManager.mnemonicFilename)
 		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
 
 		const addressMnemonic = mnemonic[address]
@@ -129,4 +125,4 @@ abstract class AbstractContractManager {
 	}
 }
 
-export default AbstractContractManager
+export default ContractManager

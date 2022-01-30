@@ -1,14 +1,11 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import AbstractContractManager, {
-	CommonResponse,
-	FeeResponse,
-} from "./abstract"
+import ContractManager, { CommonResponse, FeeResponse } from "./contract"
 
 const { BN, Address } = TonWeb.utils
 
-class WalletManager extends AbstractContractManager {
+class WalletManager extends ContractManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(protected tonweb: typeof TonWeb) {
