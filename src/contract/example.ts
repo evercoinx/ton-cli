@@ -1,41 +1,18 @@
+import {
+	ContractOptions,
+	ContractGetter,
+	ExternalMessage,
+	InitExternalMessage,
+} from "./types"
+
 const TonWeb = require("tonweb")
 
 const {
-	Address,
 	Contract,
 	HttpProvider,
 	boc: { Cell },
 	utils: { BN, nacl },
 } = TonWeb
-
-interface ContractOptions {
-	publicKey?: Uint8Array
-	wc?: number
-	address?: typeof Address | string
-}
-
-interface InitExternalMessage {
-	address: typeof Address
-	message: typeof Cell
-	body: typeof Cell
-	signingMessage: typeof Cell
-	stateInit: typeof Cell
-	code: typeof Cell
-	data: typeof Cell
-}
-
-interface ExternalMessage {
-	address: typeof Address
-	message: typeof Cell
-	body: typeof Cell
-	signature: Uint8Array
-	signingMessage: typeof Cell
-	stateInit: typeof Cell
-	code: typeof Cell
-	data: typeof Cell
-}
-
-type ContractGetter = () => { call: () => Promise<any> }
 
 class Example extends Contract {
 	public constructor(

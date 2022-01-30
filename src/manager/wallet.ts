@@ -1,94 +1,34 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import ContractManager, { CommonResponse, FeeResponse } from "./contract"
+import { CommonResponse, FeeResponse } from "./types"
+import { Contract } from "../contract/types"
+import BaseManager from "./base"
 
-const { BN, Address } = TonWeb.utils
+const {
+	utils: { BN, Address },
+} = TonWeb
 
-class WalletManager extends ContractManager {
+class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
-	public constructor(protected tonweb: typeof TonWeb) {
-		super(tonweb)
-	}
-
-	public async prepare(workchain: number): Promise<void> {
-		try {
-			console.log(`\nWallet preparation operation:`)
-
-			const mnemonic = await tonMnemonic.generateMnemonic()
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
-
-			const wallet = this.tonweb.wallet.create({
-				publicKey: keyPair.publicKey,
-				wc: workchain,
-			})
-
-			const address = await wallet.getAddress()
-			const bounceableAddress = address.toString(true, true, true)
-			await this.saveMnemonic(bounceableAddress, mnemonic)
-
-			const deployRequest = await wallet.deploy(keyPair.secretKey)
-
-			const feeResponse = await deployRequest.estimateFee()
-			this.printFees(feeResponse)
-
-			const nonBounceableAddress = address.toString(true, true, false)
-			console.log(
-				`Wallet is ready to be deployed at ${nonBounceableAddress}`,
-			)
-		} catch (err: unknown) {
-			this.printError(err)
-		}
-	}
-
-	public async deploy(address: string): Promise<void> {
-		try {
-			console.log(`\nWallet deployment operation:`)
-
-			const walletAddress = new Address(address)
-			if (!walletAddress.isUserFriendly) {
-				throw new Error(
-					`Wallet address should be in user friendly format`,
-				)
-			}
-			if (!walletAddress.isBounceable) {
-				throw new Error(`Wallet address should be bounceable`)
-			}
-
-			const mnemonic = await this.loadMnemonic(address)
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
-
-			const wallet = this.tonweb.wallet.create({
-				publicKey: keyPair.publicKey,
-				wc: walletAddress.wc,
-			})
-
-			const deployRequest = await wallet.deploy(keyPair.secretKey)
-
-			const feeResponse: FeeResponse = await deployRequest.estimateFee()
-			this.printFees(feeResponse)
-
-			const response: CommonResponse = await deployRequest.send()
-			this.printResponse(response, `Wallet was deployed successfully`)
-		} catch (err: unknown) {
-			this.printError(err)
-		}
+	public constructor(protected tonweb: typeof TonWeb, contract: Contract) {
+		super(tonweb, contract)
 	}
 
 	public async info(address: string): Promise<void> {
 		try {
-			console.log(`\nWallet information:`)
+			console.log(`\nContract information:`)
 
-			const walletAddress = new Address(address)
-			const wallet = this.tonweb.wallet.create({
-				address: walletAddress,
+			const contractAddress = new Address(address)
+			const contract = new this.Contract(this.tonweb.provider, {
+				address: contractAddress,
 			})
 
-			const seqno: number | null = await wallet.methods.seqno().call()
+			const seqno: number | null = await contract.methods.seqno().call()
 			const balance = await this.tonweb.getBalance(address)
 
-			this.printAddressInfo(walletAddress)
+			this.printAddressInfo(contractAddress)
 			console.log(`- Balance: ${this.formatAmount(balance)}`)
 			console.log(`- Sequence number: ${seqno}`)
 		} catch (err: unknown) {

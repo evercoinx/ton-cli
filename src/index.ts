@@ -6,15 +6,16 @@ import TonWeb from "tonweb"
 
 import WalletManager from "./manager/wallet"
 import ExampleManager from "./manager/example"
+import Example from "./contract/example"
 
-const { HttpProvider } = TonWeb
+const { HttpProvider, Wallets } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
 const tonweb = new TonWeb(provider)
 
-tonweb.wallet.defaultVersion = "v3R2"
 ;(async () => {
-	const walletManager = new WalletManager(tonweb)
-	const exampleManager = new ExampleManager(tonweb)
+	const wallets = new Wallets(provider)
+	const walletManager = new WalletManager(tonweb, wallets.all.v3R2)
+	const exampleManager = new ExampleManager(tonweb, Example)
 
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
