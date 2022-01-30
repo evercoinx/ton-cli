@@ -6,10 +6,10 @@ const {
 	utils: { nacl },
 } = TonWeb
 
-class Lottery extends Contract {
+class Example extends Contract {
 	constructor(provider, options) {
 		options.code = Cell.oneFromBoc(
-			"B5EE9C7241010C0100F8000114FF00F4A413F4BCF2C80B01020120020302014804050394F220C7009130E08308D71820D31FDB3C51A8BAF2A10AF9015410B6F910F2A206D30621C0018EA131383881012027D749BAF2A3F80006D21FD3FF3004A40810375E324144DB3CED54E30E080B090202CE06070105A12D810A00034308002D5708100C4C8CB0814CA0712CBFF01FA02CB6AC973FB008002CED44D0D31FD3FFD31FD31FFA00FA00D21FD3FFF404D1025801C0028F23FA00302082101DCD6500A0DB3CBCF264F800546990F00304A4081037405613DB3CED54925F0AE20A0B0008F8276F10003408C8CB1F17CBFF15CB1F13CB1F01FA0201FA02CA1FCBFFF400C9FBBDFD1B",
+			"B5EE9C72410108010072000114FF00F4A413F4BCF2C80B0102012002030201480405006EF28308D71820D31FED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F8005120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED540004D03002014806070017BB39CED44D0D31F31D70BFF80011B8C97ED44D0D70B1F8E93924A9",
 		)
 		super(provider, options)
 
@@ -31,22 +31,28 @@ class Lottery extends Contract {
 					},
 				}
 			},
+			getPublicKey: () => {
+				return {
+					call: async () => {
+						const address = await this.getAddress()
+						let pk = null
+						try {
+							pk = await provider.call2(
+								address.toString(),
+								"get_public_key",
+							)
+						} catch (e) {}
+						return pk
+					},
+				}
+			},
 		}
 
-		this.methods.balance = this.balance.bind(this)
-
-		this.deploy = (secretKey) => {
-			const res = Contract.createMethod(
+		this.deploy = (secretKey) =>
+			Contract.createMethod(
 				provider,
 				this.createInitExternalMessage(secretKey),
 			)
-			return res
-		}
-	}
-
-	async balance() {
-		const myAddress = await this.getAddress()
-		return this.provider.call2(myAddress.toString(), "balance")
 	}
 
 	createDataCell() {
@@ -139,9 +145,9 @@ class Lottery extends Contract {
 			address: selfAddress,
 			message: resultMessage, // old wallet_send_generate_external_message
 
-			body: body,
-			signature: signature,
-			signingMessage: signingMessage,
+			body,
+			signature,
+			signingMessage,
 
 			stateInit,
 			code,
@@ -150,4 +156,4 @@ class Lottery extends Contract {
 	}
 }
 
-export default Lottery
+export default Example

@@ -5,39 +5,39 @@ import AbstractContractManager, {
 	CommonResponse,
 	FeeResponse,
 } from "./abstract"
-import Lottery from "../contract/lottery"
+import Example from "../contract/example"
 
 const { Address } = TonWeb.utils
 
-class LotteryManager extends AbstractContractManager {
+class ExampleManager extends AbstractContractManager {
 	public constructor(protected tonweb: typeof TonWeb) {
 		super(tonweb)
 	}
 
 	public async prepare(workchain: number): Promise<void> {
 		try {
-			console.log(`\nLottery preparation operation:`)
+			console.log(`\nExample preparation operation:`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const lottery = new Lottery(this.tonweb.provider, {
+			const example = new Example(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: workchain,
 			})
 
-			const address = await lottery.getAddress()
+			const address = await example.getAddress()
 			const bounceableAddress = address.toString(true, true, true)
 			await this.saveMnemonic(bounceableAddress, mnemonic)
 
-			const deployRequest = await lottery.deploy(keyPair.secretKey)
+			const deployRequest = await example.deploy(keyPair.secretKey)
 
 			const feeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
 			const nonBounceableAddress = address.toString(true, true, false)
 			console.log(
-				`Lottery is ready to be deployed at ${nonBounceableAddress}`,
+				`Example contract is ready to be deployed at ${nonBounceableAddress}`,
 			)
 		} catch (err: unknown) {
 			this.printError(err)
@@ -46,27 +46,27 @@ class LotteryManager extends AbstractContractManager {
 
 	public async deploy(address: string): Promise<void> {
 		try {
-			console.log(`\nLottery deployment operation:`)
+			console.log(`\nExample deployment operation:`)
 
-			const lotteryAddress = new Address(address)
-			if (!lotteryAddress.isUserFriendly) {
+			const exampleAddress = new Address(address)
+			if (!exampleAddress.isUserFriendly) {
 				throw new Error(
-					`Lottery address should be in user friendly format`,
+					`Contract address should be in user friendly format`,
 				)
 			}
-			if (!lotteryAddress.isBounceable) {
-				throw new Error(`Wallet address should be bounceable`)
+			if (!exampleAddress.isBounceable) {
+				throw new Error(`Contract address should be bounceable`)
 			}
 
 			const mnemonic = await this.loadMnemonic(address)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const lottery = new Lottery(this.tonweb.provider, {
+			const example = new Example(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
-				wc: lotteryAddress.wc,
+				wc: exampleAddress.wc,
 			})
 
-			const deployRequest = await lottery.deploy(keyPair.secretKey)
+			const deployRequest = await example.deploy(keyPair.secretKey)
 
 			const feeResponse: FeeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
@@ -74,10 +74,10 @@ class LotteryManager extends AbstractContractManager {
 			const response: CommonResponse = await deployRequest.send()
 			if (response["@type"] !== "ok") {
 				throw new Error(
-					`Code: ${response.code}, message: ${response.message}`,
+					`code: ${response.code}, message: ${response.message}`,
 				)
 			}
-			console.log(`Lottery was deployed successfully`)
+			console.log(`Example contract was deployed successfully`)
 		} catch (err: unknown) {
 			this.printError(err)
 		}
@@ -85,23 +85,27 @@ class LotteryManager extends AbstractContractManager {
 
 	public async info(address: string): Promise<void> {
 		try {
-			console.log(`\nLottery information:`)
+			console.log(`\nExample information:`)
 
-			const lotteryAddress = new Address(address)
-			const lottery = new Lottery(this.tonweb.provider, {
-				address: lotteryAddress,
+			const exampleAddress = new Address(address)
+			const example = new Example(this.tonweb.provider, {
+				address: exampleAddress,
 			})
 
-			const seqno: number | null = await lottery.methods.seqno().call()
 			const balance = await this.tonweb.getBalance(address)
+			const seqno: number | null = await example.methods.seqno().call()
+			const publicKey: string | null = await example.methods
+				.getPublicKey()
+				.call()
 
-			this.printAddressInfo(lotteryAddress)
+			this.printAddressInfo(exampleAddress)
 			console.log(`- Balance: ${this.formatAmount(balance)}`)
 			console.log(`- Sequence number: ${seqno}`)
+			console.log(`- Public key: ${publicKey}`)
 		} catch (err: unknown) {
 			this.printError(err)
 		}
 	}
 }
 
-export default LotteryManager
+export default ExampleManager

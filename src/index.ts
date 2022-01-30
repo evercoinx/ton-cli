@@ -5,7 +5,7 @@ import { hideBin } from "yargs/helpers"
 import TonWeb from "tonweb"
 
 import WalletManager from "./manager/wallet"
-import LotteryManager from "./manager/lottery"
+import ExampleManager from "./manager/example"
 
 const { HttpProvider } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
@@ -14,7 +14,7 @@ const tonweb = new TonWeb(provider)
 tonweb.wallet.defaultVersion = "v3R2"
 ;(async () => {
 	const walletManager = new WalletManager(tonweb)
-	const lotteryManager = new LotteryManager(tonweb)
+	const exampleManager = new ExampleManager(tonweb)
 
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
@@ -99,9 +99,9 @@ tonweb.wallet.defaultVersion = "v3R2"
 			},
 		})
 		.command({
-			command: "lotteryprepare [wc]",
-			aliases: ["lp"],
-			describe: "Prepare lottery",
+			command: "exampleprepare [wc]",
+			aliases: ["ep"],
+			describe: "Prepare example",
 			builder: (yargs: Argv) =>
 				yargs
 					.positional("wc", {
@@ -111,33 +111,33 @@ tonweb.wallet.defaultVersion = "v3R2"
 					.coerce("wc", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
 				const { wc } = argv
-				await lotteryManager.prepare(wc)
+				await exampleManager.prepare(wc)
 			},
 		})
 		.command({
-			command: "lotterydeploy <address>",
-			aliases: ["ld"],
-			describe: "Deploy lottery",
+			command: "exampledeploy <address>",
+			aliases: ["ed"],
+			describe: "Deploy example",
 			builder: (yargs: Argv) =>
 				yargs.positional("address", {
-					describe: "Lottery address",
+					describe: "Contract address",
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await lotteryManager.deploy(address)
+				await exampleManager.deploy(address)
 			},
 		})
 		.command({
-			command: "lotteryinfo <address>",
-			aliases: ["li"],
-			describe: "Get lottery information",
+			command: "exampleinfo <address>",
+			aliases: ["ei"],
+			describe: "Get example information",
 			builder: (yargs: Argv) =>
 				yargs.positional("address", {
-					describe: "Wallet address",
+					describe: "Contract address",
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await lotteryManager.info(address)
+				await exampleManager.info(address)
 			},
 		})
 		.strictCommands()
