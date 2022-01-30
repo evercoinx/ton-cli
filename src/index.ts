@@ -4,8 +4,8 @@ import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
 import TonWeb from "tonweb"
 
-import WalletLifecycle from "./lifecycle/wallet"
-import LotteryLifecycle from "./lifecycle/lottery"
+import WalletManager from "./manager/wallet"
+import LotteryManager from "./manager/lottery"
 
 const { HttpProvider } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
@@ -13,8 +13,8 @@ const tonweb = new TonWeb(provider)
 
 tonweb.wallet.defaultVersion = "v3R2"
 ;(async () => {
-	const walletLifecycle = new WalletLifecycle(tonweb)
-	const lotteryLifecycle = new LotteryLifecycle(tonweb)
+	const walletManager = new WalletManager(tonweb)
+	const lotteryManager = new LotteryManager(tonweb)
 
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
@@ -31,7 +31,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 					.coerce("wc", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
 				const { wc } = argv
-				await walletLifecycle.prepare(wc)
+				await walletManager.prepare(wc)
 			},
 		})
 		.command({
@@ -44,7 +44,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await walletLifecycle.deploy(address)
+				await walletManager.deploy(address)
 			},
 		})
 		.command({
@@ -57,7 +57,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await walletLifecycle.info(address)
+				await walletManager.info(address)
 			},
 		})
 		.command({
@@ -89,7 +89,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 					}),
 			handler: async (argv: any) => {
 				const { sender, recipient, amount, stateinit, memo } = argv
-				await walletLifecycle.transfer(
+				await walletManager.transfer(
 					sender,
 					recipient,
 					amount,
@@ -111,7 +111,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 					.coerce("wc", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
 				const { wc } = argv
-				await lotteryLifecycle.prepare(wc)
+				await lotteryManager.prepare(wc)
 			},
 		})
 		.command({
@@ -124,7 +124,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await lotteryLifecycle.deploy(address)
+				await lotteryManager.deploy(address)
 			},
 		})
 		.command({
@@ -137,7 +137,7 @@ tonweb.wallet.defaultVersion = "v3R2"
 				}),
 			handler: async (argv: any) => {
 				const { address } = argv
-				await lotteryLifecycle.info(address)
+				await lotteryManager.info(address)
 			},
 		})
 		.strictCommands()

@@ -37,7 +37,7 @@ interface FeeSuccessResponse {
 
 export type FeeResponse = FeeSuccessResponse | ErrorResponse
 
-abstract class AbstractLifecycle {
+abstract class AbstractContractManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(protected tonweb: typeof TonWeb) {}
@@ -53,23 +53,23 @@ abstract class AbstractLifecycle {
 		newMnemonic: string[],
 	): Promise<void> {
 		const fileContents = await fs.readFile(
-			AbstractLifecycle.mnemonicFilename,
+			AbstractContractManager.mnemonicFilename,
 		)
 		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
 
 		mnemonic[address] = newMnemonic
 		await fs.writeFile(
-			AbstractLifecycle.mnemonicFilename,
+			AbstractContractManager.mnemonicFilename,
 			JSON.stringify(mnemonic, null, 4),
 		)
 		console.log(
-			`Wallet mnemonic was saved to ${AbstractLifecycle.mnemonicFilename} file`,
+			`Wallet mnemonic was saved to ${AbstractContractManager.mnemonicFilename} file`,
 		)
 	}
 
 	protected async loadMnemonic(address: string): Promise<string[]> {
 		const fileContents = await fs.readFile(
-			AbstractLifecycle.mnemonicFilename,
+			AbstractContractManager.mnemonicFilename,
 		)
 		const mnemonic: AddressToMnemonic = JSON.parse(fileContents.toString())
 
@@ -129,4 +129,4 @@ abstract class AbstractLifecycle {
 	}
 }
 
-export default AbstractLifecycle
+export default AbstractContractManager

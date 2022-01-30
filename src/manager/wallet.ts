@@ -1,11 +1,14 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import AbstractLifecycle, { CommonResponse, FeeResponse } from "./abstract"
+import AbstractContractManager, {
+	CommonResponse,
+	FeeResponse,
+} from "./abstract"
 
 const { BN, Address } = TonWeb.utils
 
-class WalletLifecycle extends AbstractLifecycle {
+class WalletManager extends AbstractContractManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(protected tonweb: typeof TonWeb) {
@@ -160,7 +163,7 @@ class WalletLifecycle extends AbstractLifecycle {
 				secretKey: keyPair.secretKey,
 				toAddress: recipientAddress,
 				amount: amountNano,
-				seqno,
+				seqno: seqno || 0,
 				payload: memo,
 				sendMode: 3,
 			})
@@ -185,4 +188,4 @@ class WalletLifecycle extends AbstractLifecycle {
 	}
 }
 
-export default WalletLifecycle
+export default WalletManager

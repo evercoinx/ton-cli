@@ -1,12 +1,15 @@
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb from "tonweb"
 
-import AbstractLifecycle, { CommonResponse, FeeResponse } from "./abstract"
+import AbstractContractManager, {
+	CommonResponse,
+	FeeResponse,
+} from "./abstract"
 import Lottery from "../contract/lottery"
 
 const { Address } = TonWeb.utils
 
-class LotteryLifecycle extends AbstractLifecycle {
+class LotteryManager extends AbstractContractManager {
 	public constructor(protected tonweb: typeof TonWeb) {
 		super(tonweb)
 	}
@@ -101,4 +104,4 @@ class LotteryLifecycle extends AbstractLifecycle {
 	}
 }
 
-export default LotteryLifecycle
+export default LotteryManager
