@@ -12,55 +12,69 @@ const { HttpProvider, Wallets } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
 const tonweb = new TonWeb(provider)
 
-;(async () => {
-	const wallets = new Wallets(provider)
-	const walletManager = new WalletManager(tonweb, wallets.all.v3R2)
-	const exampleManager = new ExampleManager(tonweb, Example)
+const wallets = new Wallets(provider)
+const walletManager = new WalletManager(tonweb, wallets.all.v3R2)
+const exampleManager = new ExampleManager(tonweb, Example)
 
+const contractToManager = {
+	wallet: walletManager,
+	example: exampleManager,
+}
+
+const createPrepareCommand = (contract: string) => ({
+	command: `${contract}prepare [wc]`,
+	aliases: [`${contract[0]}p`],
+	describe: `Prepare ${contract}`,
+	builder: (yargs: Argv) =>
+		yargs
+			.positional("wc", {
+				describe: "Workchain id. Defaults to 0",
+				default: 0,
+			})
+			.coerce("wc", (opt: string) => parseInt(opt)),
+	handler: async (argv: any) => {
+		const { wc } = argv
+		await contractToManager[contract].prepare(wc)
+	},
+})
+
+const createDeployCommand = (contract: string) => ({
+	command: `${contract}deploy <address>`,
+	aliases: [`${contract[0]}d`],
+	describe: `Deploy ${contract}`,
+	builder: (yargs: Argv) =>
+		yargs.positional("address", {
+			describe: "Contract address",
+		}),
+	handler: async (argv: any) => {
+		const { address } = argv
+		await contractToManager[contract].deploy(address)
+	},
+})
+
+const createInfoCommand = (contract: string) => ({
+	command: `${contract}info <address>`,
+	aliases: [`${contract[0]}i`],
+	describe: `Get ${contract} information`,
+	builder: (yargs: Argv) =>
+		yargs.positional("address", {
+			describe: "Contract address",
+		}),
+	handler: async (argv: any) => {
+		const { address } = argv
+		await contractToManager[contract].info(address)
+	},
+})
+
+const walletContract = "wallet"
+const exampleContract = "example"
+
+;(async () => {
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
-		.command({
-			command: "walletprepare [wc]",
-			aliases: ["wp"],
-			describe: "Prepare wallet",
-			builder: (yargs: Argv) =>
-				yargs
-					.positional("wc", {
-						describe: "Workchain id. Defaults to 0",
-						default: 0,
-					})
-					.coerce("wc", (opt: string) => parseInt(opt)),
-			handler: async (argv: any) => {
-				const { wc } = argv
-				await walletManager.prepare(wc)
-			},
-		})
-		.command({
-			command: "walletdeploy <address>",
-			aliases: ["wd"],
-			describe: "Deploy wallet",
-			builder: (yargs: Argv) =>
-				yargs.positional("address", {
-					describe: "Wallet address",
-				}),
-			handler: async (argv: any) => {
-				const { address } = argv
-				await walletManager.deploy(address)
-			},
-		})
-		.command({
-			command: "walletinfo <address>",
-			aliases: ["wi"],
-			describe: "Get wallet information",
-			builder: (yargs: Argv) =>
-				yargs.positional("address", {
-					describe: "Wallet address",
-				}),
-			handler: async (argv: any) => {
-				const { address } = argv
-				await walletManager.info(address)
-			},
-		})
+		.command(createPrepareCommand(walletContract))
+		.command(createDeployCommand(walletContract))
+		.command(createInfoCommand(walletContract))
 		.command({
 			command:
 				"wallettransfer <sender> <recipient> <amount> [stateinit] [memo]",
@@ -99,48 +113,9 @@ const tonweb = new TonWeb(provider)
 				)
 			},
 		})
-		.command({
-			command: "exampleprepare [wc]",
-			aliases: ["ep"],
-			describe: "Prepare example",
-			builder: (yargs: Argv) =>
-				yargs
-					.positional("wc", {
-						describe: "Workchain id. Defaults to 0",
-						default: 0,
-					})
-					.coerce("wc", (opt: string) => parseInt(opt)),
-			handler: async (argv: any) => {
-				const { wc } = argv
-				await exampleManager.prepare(wc)
-			},
-		})
-		.command({
-			command: "exampledeploy <address>",
-			aliases: ["ed"],
-			describe: "Deploy example",
-			builder: (yargs: Argv) =>
-				yargs.positional("address", {
-					describe: "Contract address",
-				}),
-			handler: async (argv: any) => {
-				const { address } = argv
-				await exampleManager.deploy(address)
-			},
-		})
-		.command({
-			command: "exampleinfo <address>",
-			aliases: ["ei"],
-			describe: "Get example information",
-			builder: (yargs: Argv) =>
-				yargs.positional("address", {
-					describe: "Contract address",
-				}),
-			handler: async (argv: any) => {
-				const { address } = argv
-				await exampleManager.info(address)
-			},
-		})
+		.command(createPrepareCommand(exampleContract))
+		.command(createDeployCommand(exampleContract))
+		.command(createInfoCommand(exampleContract))
 		.strictCommands()
 		.demandCommand(1)
 		.help().argv
