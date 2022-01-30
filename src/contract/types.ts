@@ -37,4 +37,12 @@ export interface ExternalMessage {
 	data: typeof Cell
 }
 
-export type ContractGetter = () => { call: () => Promise<any> }
+export type MethodCaller = () => {
+	call: () => Promise<any>
+}
+
+export type MethodSender = () => {
+	send: () => Promise<any>
+	getQuery: () => Promise<any>
+	estimateFee: () => Promise<any>
+}

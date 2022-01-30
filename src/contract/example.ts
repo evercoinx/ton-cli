@@ -1,8 +1,9 @@
 import {
 	ContractOptions,
-	ContractGetter,
 	ExternalMessage,
 	InitExternalMessage,
+	MethodCaller,
+	MethodSender,
 } from "./types"
 
 const TonWeb = require("tonweb")
@@ -25,19 +26,19 @@ class Example extends Contract {
 		super(provider, { ...options, code })
 
 		this.methods = {
-			seqno: this.createGetter("seqno"),
-			getPublicKey: this.createGetter("get_public_key"),
+			seqno: this.createCaller("seqno"),
+			getPublicKey: this.createCaller("get_public_key"),
 		}
 	}
 
-	public async deploy(secretKey: Uint8Array) {
+	public async deploy(secretKey: Uint8Array): Promise<MethodSender> {
 		return Contract.createMethod(
 			this.provider,
 			this.createInitExternalMessage(secretKey),
 		)
 	}
 
-	private createGetter(methodId: string): ContractGetter {
+	private createCaller(methodId: string): MethodCaller {
 		return () => ({
 			call: async () => {
 				const address = await this.getAddress()
