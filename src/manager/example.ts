@@ -69,12 +69,10 @@ class ExampleManager extends ContractManager {
 			this.printFees(feeResponse)
 
 			const response: CommonResponse = await deployRequest.send()
-			if (response["@type"] !== "ok") {
-				throw new Error(
-					`code: ${response.code}, message: ${response.message}`,
-				)
-			}
-			console.log(`Example contract was deployed successfully`)
+			this.printResponse(
+				response,
+				`Example contract was deployed successfully`,
+			)
 		} catch (err: unknown) {
 			this.printError(err)
 		}

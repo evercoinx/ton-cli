@@ -70,12 +70,7 @@ class WalletManager extends ContractManager {
 			this.printFees(feeResponse)
 
 			const response: CommonResponse = await deployRequest.send()
-			if (response["@type"] !== "ok") {
-				throw new Error(
-					`Code: ${response.code}, message: ${response.message}`,
-				)
-			}
-			console.log(`Wallet was deployed successfully`)
+			this.printResponse(response, `Wallet was deployed successfully`)
 		} catch (err: unknown) {
 			this.printError(err)
 		}
@@ -105,11 +100,11 @@ class WalletManager extends ContractManager {
 		sender: string,
 		recipient: string,
 		amount: number,
-		stateinit: boolean,
+		stateInit: boolean,
 		memo: string,
 	): Promise<void> {
 		try {
-			console.log(`\nTransfer operation between wallets:`)
+			console.log(`\nWallet transfer operation:`)
 
 			const recipientAddress = new Address(recipient)
 			if (!recipientAddress.isUserFriendly) {
@@ -118,13 +113,13 @@ class WalletManager extends ContractManager {
 				)
 			}
 
-			if (stateinit && recipientAddress.isBounceable) {
+			if (stateInit && recipientAddress.isBounceable) {
 				throw new Error(
 					`Recipient's wallet address should be non-bounceable for state init operation`,
 				)
 			}
 
-			if (!stateinit && !recipientAddress.isBounceable) {
+			if (!stateInit && !recipientAddress.isBounceable) {
 				throw new Error(
 					`Recipient's wallet address should be bounceable for any not state init operation`,
 				)
@@ -169,12 +164,8 @@ class WalletManager extends ContractManager {
 			this.printFees(feeResponse)
 
 			const response: CommonResponse = await transferRequest.send()
-			if (response["@type"] !== "ok") {
-				throw new Error(
-					`Code: ${response.code}, message: ${response.message}`,
-				)
-			}
-			console.log(
+			this.printResponse(
+				response,
 				`${this.formatAmount(
 					amountNano,
 				)} were transferred successfully`,

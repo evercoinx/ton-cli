@@ -119,6 +119,18 @@ abstract class ContractManager {
 		console.log(`- Storage fee:    ${this.formatAmount(fees.storage_fee)}`)
 	}
 
+	protected printResponse(
+		response: CommonResponse,
+		successMessage: string,
+	): void {
+		if (response["@type"] !== "ok") {
+			throw new Error(
+				`code: ${response.code}, message: ${response.message}`,
+			)
+		}
+		console.log(successMessage)
+	}
+
 	protected printError(err: unknown): void {
 		console.error(`Error occurred!`)
 		console.error(err)
