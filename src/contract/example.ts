@@ -31,6 +31,7 @@ class Example extends Contract {
 			call: async () => {
 				const address = await this.getAddress()
 				let result: any = null
+
 				try {
 					result = await this.provider.call2(
 						address.toString(),
@@ -40,6 +41,7 @@ class Example extends Contract {
 						result = result.toNumber()
 					}
 				} catch (e) {}
+
 				return result
 			},
 		})
@@ -109,15 +111,16 @@ class Example extends Contract {
 		body.bits.writeBytes(signature)
 		body.writeCell(signingMessage)
 
-		let stateInit = null
-		let code = null
-		let data = null
+		let stateInit: boc.Cell | undefined
+		let code: boc.Cell | undefined
+		let data: boc.Cell | undefined
 
 		if (seqno === 0) {
 			if (!this.options.publicKey) {
 				const keyPair = nacl.sign.keyPair.fromSecretKey(secretKey)
 				this.options.publicKey = keyPair.publicKey
 			}
+
 			const deploy = await this.createStateInit()
 			stateInit = deploy.stateInit
 			code = deploy.code
