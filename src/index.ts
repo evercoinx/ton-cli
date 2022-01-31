@@ -9,12 +9,12 @@ import ExampleManager from "./manager/example"
 import Example from "./contract/example"
 
 const { HttpProvider, Wallets } = TonWeb
-const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST)
+const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST || "")
 const tonweb = new TonWeb(provider)
 
 const wallets = new Wallets(provider)
 const walletManager = new WalletManager(tonweb, wallets.all.v3R2)
-const exampleManager = new ExampleManager(tonweb, Example)
+const exampleManager = new ExampleManager(tonweb, Example as any)
 
 const contractToManager = {
 	wallet: walletManager,

@@ -1,8 +1,7 @@
 import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb from "tonweb"
-import { Contract } from "../contract/types"
-import { CommonResponse, FeeResponse, SourceFees } from "./types"
+import TonWeb, { contract, utils } from "tonweb"
+import { CommonResponse, FeeResponse, SourceFees } from "tonapi"
 
 const {
 	utils: { Address },
@@ -24,8 +23,8 @@ abstract class BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(
-		protected tonweb: typeof TonWeb,
-		protected Contract: Contract,
+		protected tonweb: TonWeb,
+		protected Contract: typeof contract.WalletContract,
 	) {}
 
 	public abstract info(address: string): Promise<void>
@@ -128,11 +127,11 @@ abstract class BaseManager {
 		return addressMnemonic
 	}
 
-	protected formatAmount(amount: number): string {
+	protected formatAmount(amount: number | string): string {
 		return `${this.tonweb.utils.fromNano(amount)} TON`
 	}
 
-	protected printAddressInfo(address: typeof Address): void {
+	protected printAddressInfo(address: utils.Address): void {
 		console.log(`- Raw address: ${address.toString(false, true, true)}`)
 		console.log(
 			`- Non-bounceable address (for init):     ${address.toString(

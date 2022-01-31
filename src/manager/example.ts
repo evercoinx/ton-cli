@@ -1,7 +1,6 @@
-import TonWeb from "tonweb"
+import TonWeb, { contract } from "tonweb"
 
 import BaseManager from "./base"
-import { Contract } from "../contract/types"
 
 const {
 	utils: { Address },
@@ -9,8 +8,8 @@ const {
 
 class ExampleManager extends BaseManager {
 	public constructor(
-		protected tonweb: typeof TonWeb,
-		protected Contract: Contract,
+		protected tonweb: TonWeb,
+		protected Contract: typeof contract.WalletContract,
 	) {
 		super(tonweb, Contract)
 	}
@@ -25,10 +24,12 @@ class ExampleManager extends BaseManager {
 			})
 
 			const balance = await this.tonweb.getBalance(address)
-			const seqno: number | null = await contract.methods.seqno().call()
-			const publicKey: string | null = await contract.methods
-				.getPublicKey()
-				.call()
+			const seqno: number | null = await (
+				contract.methods.seqno() as contract.MethodCallerRequest
+			).call()
+			const publicKey: string | null = await (
+				contract.methods.getPublicKey() as contract.MethodCallerRequest
+			).call()
 
 			this.printAddressInfo(contractAddress)
 			console.log(`- Balance: ${this.formatAmount(balance)}`)

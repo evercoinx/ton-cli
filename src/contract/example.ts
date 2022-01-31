@@ -1,25 +1,13 @@
-import {
-	ContractOptions,
-	ExternalMessage,
-	InitExternalMessage,
-	MethodCaller,
-	MethodSender,
-} from "./types"
-
-const TonWeb = require("tonweb")
+import TonWeb, { HttpProvider, boc, contract } from "tonweb"
 
 const {
 	Contract,
-	HttpProvider,
 	boc: { Cell },
 	utils: { BN, nacl },
 } = TonWeb
 
 class Example extends Contract {
-	public constructor(
-		provider: typeof HttpProvider,
-		options: ContractOptions,
-	) {
+	public constructor(provider: HttpProvider, options: contract.Options) {
 		const code = Cell.oneFromBoc(
 			"B5EE9C72410108010072000114FF00F4A413F4BCF2C80B0102012002030201480405006EF28308D71820D31FED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F8005120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED540004D03002014806070017BB39CED44D0D31F31D70BFF80011B8C97ED44D0D70B1F8E93924A9",
 		)
@@ -31,14 +19,14 @@ class Example extends Contract {
 		}
 	}
 
-	public async deploy(secretKey: Uint8Array): Promise<MethodSender> {
+	public async deploy(secretKey: Uint8Array): Promise<contract.MethodSender> {
 		return Contract.createMethod(
 			this.provider,
 			this.createInitExternalMessage(secretKey),
 		)
 	}
 
-	private createCaller(methodId: string): MethodCaller {
+	private createCaller(methodId: string): contract.MethodCaller {
 		return () => ({
 			call: async () => {
 				const address = await this.getAddress()
@@ -57,14 +45,18 @@ class Example extends Contract {
 		})
 	}
 
-	private createDataCell(): typeof Cell {
+	protected createDataCell(): boc.Cell {
 		const cell = new Cell()
 		cell.bits.writeUint(0, 32) // seqno
-		cell.bits.writeBytes(this.options.publicKey) // public key
+
+		if (!this.options.publicKey) {
+			throw new Error("no public key in options")
+		}
+		cell.bits.writeBytes(this.options.publicKey)
 		return cell
 	}
 
-	private createSigningMessage(seqno: number = 0): typeof Cell {
+	private createSigningMessage(seqno: number = 0): boc.Cell {
 		const cell = new Cell()
 		cell.bits.writeUint(seqno, 32)
 		return cell
@@ -72,7 +64,7 @@ class Example extends Contract {
 
 	private async createInitExternalMessage(
 		secretKey: Uint8Array,
-	): Promise<InitExternalMessage> {
+	): Promise<contract.InitExternalMessage> {
 		if (!this.options.publicKey) {
 			const keyPair = nacl.sign.keyPair.fromSecretKey(secretKey)
 			this.options.publicKey = keyPair.publicKey
@@ -104,11 +96,11 @@ class Example extends Contract {
 	}
 
 	private async createExternalMessage(
-		signingMessage: typeof Cell,
+		signingMessage: boc.Cell,
 		secretKey: Uint8Array,
 		seqno: number,
-		dummySignature: boolean = false,
-	): Promise<ExternalMessage> {
+		dummySignature = false,
+	): Promise<contract.ExternalMessage> {
 		const signature = dummySignature
 			? new Uint8Array(64)
 			: nacl.sign.detached(await signingMessage.hash(), secretKey)

@@ -1,8 +1,7 @@
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb from "tonweb"
+import TonWeb, { contract } from "tonweb"
+import { CommonResponse, FeeResponse } from "tonapi"
 
-import { CommonResponse, FeeResponse } from "./types"
-import { Contract } from "../contract/types"
 import BaseManager from "./base"
 
 const {
@@ -12,8 +11,11 @@ const {
 class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
-	public constructor(protected tonweb: typeof TonWeb, contract: Contract) {
-		super(tonweb, contract)
+	public constructor(
+		protected tonweb: TonWeb,
+		Contract: typeof contract.WalletContract,
+	) {
+		super(tonweb, Contract)
 	}
 
 	public async info(address: string): Promise<void> {
@@ -25,7 +27,9 @@ class WalletManager extends BaseManager {
 				address: contractAddress,
 			})
 
-			const seqno: number | null = await contract.methods.seqno().call()
+			const seqno: number | null = await (
+				contract.methods.seqno() as contract.MethodCallerRequest
+			).call()
 			const balance = await this.tonweb.getBalance(address)
 
 			this.printAddressInfo(contractAddress)
@@ -86,7 +90,9 @@ class WalletManager extends BaseManager {
 				)
 			}
 
-			const seqno: number | null = await wallet.methods.seqno().call()
+			const seqno: number | null = await (
+				wallet.methods.seqno() as contract.MethodCallerRequest
+			).call()
 			if (seqno == null) {
 				throw new Error(`Wallet sequence number is undefined`)
 			}
@@ -98,7 +104,7 @@ class WalletManager extends BaseManager {
 				seqno: seqno || 0,
 				payload: memo,
 				sendMode: 3,
-			})
+			}) as contract.MethodSenderRequest
 
 			const feeResponse: FeeResponse = await transferRequest.estimateFee()
 			this.printFees(feeResponse)
