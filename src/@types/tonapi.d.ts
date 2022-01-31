@@ -6,7 +6,7 @@ declare module "tonapi" {
 
 	interface ErrorResponse {
 		"@type": "error"
-		code: string
+		code: number
 		message: string
 		"@extra": string
 	}

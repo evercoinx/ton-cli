@@ -172,70 +172,216 @@ declare module "tonweb" {
 		}
 	}
 
-	type MethodId = string | number
+	declare namespace provider {
+		type AccountState = "uninitialized" | "active"
 
-	type CallMethodParams = [string, any][]
+		interface Error {
+			"@type": "error"
+			code: number
+			message: string
+			"@extra": string
+		}
 
-	export class HttpProvider {
-		public constructor(host: string)
+		interface Block {
+			"@type": "ton.blockIdExt"
+			workchain: number
+			shard: string
+			seqno: number
+			root_hash: string
+			file_hash: string
+		}
 
-		public send(method: string, params: any[]): Promise<any>
+		interface TransactionId {
+			"@type": "internal.transactionId"
+			lt: string
+			hash: string
+		}
 
-		public getAddressInfo(address: string): Promise<any>
+		interface ExtendedTransactionId extends TransactionId {
+			"@type": "blocks.shortTxId"
+			mode: number
+			account: string
+		}
 
-		public getExtendedAddressInfo(address: string): Promise<any>
+		interface ExtendedAddressInfo {
+			"@type": "fullAccountState"
+			address: {
+				"@type": "accountAddress"
+				account_address: string
+			}
+			balance: string
+			last_transaction_id: TransactionId
+			block_id: Block
+			sync_utime: number
+			account_state: {
+				"@type": "raw.accountState"
+				code: string
+				data: string
+				frozen_hash: string
+			}
+			revision: number
+			"@extra": string
+		}
 
-		public getWalletInfo(address: string): Promise<any>
+		interface AddressInfo {
+			"@type": "raw.fullAccountState"
+			balance: string
+			code: string
+			data: string
+			last_transaction_id: TransactionId
+			block_id: Block
+			frozen_hash: string
+			sync_utime: number
+			"@extra": string
+			state: AccountState
+		}
 
-		getTransactions(
-			address: utils.Address | string,
-			limit = 20,
-			lt?: number,
-			txHash?: string,
-			toLt?: number,
-		): Promise<any[]>
+		interface WalletInfo {
+			wallet: boolean
+			balance: string
+			account_state: AccountState
+			last_transaction_id: TransactionId
+		}
 
-		public async getBalance(
-			address: utils.Address | string,
-		): Promise<string>
+		interface Transaction {
+			"@type": "raw.transaction"
+			utime: number
+			data: string
+			transaction_id: TransactionId
+			fee: string
+			storage_fee: string
+			other_fee: string
+			in_msg: {
+				"@type": "raw.message"
+				source: string
+				destination: string
+				value: string
+				fwd_fee: string
+				ihr_fee: string
+				created_lt: string
+				body_hash: string
+				msg_data: {
+					"@type": "msg.dataText"
+					text: string
+				}
+				message: string
+			}
+			out_msgs: []
+		}
 
-		public sendBoc(bytes: Uint8Array): Promise<any>
+		interface MasterchainInfo {
+			"@type": "blocks.masterchainInfo"
+			last: Block
+			state_root_hash: string
+			init: Block
+			"@extra": string
+		}
 
-		public call(
-			address: utils.Address | string,
-			method: MethodId,
-			params: CallMethodParams = [],
-		): Promise<any>
+		interface BlockShards {
+			"@type": "blocks.shards"
+			shards: Block[]
+			"@extra": string
+		}
 
-		public call2(
-			address: string,
-			method: MethodId,
-			params: CallMethodParams = [],
-		): Promise<any>
+		interface BlockHeader {
+			"@type": "blocks.header"
+			id: Block
+			global_id: number
+			version: number
+			after_merge: boolean
+			after_split: boolean
+			before_split: boolean
+			want_merge: boolean
+			want_split: boolean
+			validator_list_hash_short: number
+			catchain_seqno: number
+			min_ref_mc_seqno: number
+			is_key_block: boolean
+			prev_key_block_seqno: number
+			start_lt: string
+			end_lt: string
+			prev_blocks: Block[]
+			"@extra": string
+		}
 
-		public getMasterchainInfo(): Promise<any>
+		interface BlockTransactions {
+			"@type": "blocks.transactions"
+			id: Block
+			req_count: number
+			incomplete: boolean
+			transactions: ExtendedTransactionId[]
+			"@extra": string
+		}
 
-		public getBlockShards(masterchainBlockNumber: number): Promise<any[]>
+		type MethodId = string | number
 
-		public getBlockTransactions(
-			workchain: number,
-			shardId: string,
-			shardBlockNumber: number,
-		): Promise<any[]>
+		type CallMethodParams = [string, any][]
 
-		public getMasterchainBlockTransactions(
-			masterchainBlockNumber: number,
-		): Promise<any[]>
+		export class HttpProvider {
+			public constructor(host: string)
 
-		public getBlockHeader(
-			workchain: number,
-			shardId: string,
-			shardBlockNumber: number,
-		): Promise<any>
+			public send(method: string, params: any[]): Promise<any>
 
-		public getMasterchainBlockHeader(
-			masterchainBlockNumber: number,
-		): Promise<any>
+			public getAddressInfo(address: string): Promise<AddressInfo | Error>
+
+			public getExtendedAddressInfo(
+				address: string,
+			): Promise<ExtendedAddressInfo | Error>
+
+			public getWalletInfo(address: string): Promise<WalletInfo | Error>
+
+			getTransactions(
+				address: utils.Address | string,
+				limit = 20,
+				lt?: number,
+				txHash?: string,
+				toLt?: number,
+			): Promise<Transaction[] | Error>
+
+			public async getBalance(
+				address: utils.Address | string,
+			): Promise<string>
+
+			public sendBoc(bytes: Uint8Array): Promise<any>
+
+			public call(
+				address: utils.Address | string,
+				method: MethodId,
+				params: CallMethodParams = [],
+			): Promise<any>
+
+			public call2(
+				address: string,
+				method: MethodId,
+				params: CallMethodParams = [],
+			): Promise<any>
+
+			public getMasterchainInfo(): Promise<MasterchainInfo | Error>
+
+			public getBlockShards(
+				masterchainBlockNumber: number,
+			): Promise<BlockShards | Error>
+
+			public getBlockTransactions(
+				workchain: number,
+				shardId: string,
+				shardBlockNumber: number,
+			): Promise<BlockTransactions | Error>
+
+			public getMasterchainBlockTransactions(
+				masterchainBlockNumber: number,
+			): Promise<BlockTransactions | Error>
+
+			public getBlockHeader(
+				workchain: number,
+				shardId: string,
+				shardBlockNumber: number,
+			): Promise<BlockHeader | Error>
+
+			public getMasterchainBlockHeader(
+				masterchainBlockNumber: number,
+			): Promise<BlockHeader | Error>
+		}
 	}
 
 	declare namespace contract {
@@ -293,7 +439,7 @@ declare module "tonweb" {
 			public methods: Methods
 
 			public constructor(
-				public provider: HttpProvider,
+				public provider: provider.HttpProvider,
 				public options: Options,
 			)
 
@@ -340,7 +486,7 @@ declare module "tonweb" {
 			): boc.Cell
 
 			public static createMethod(
-				provider: HttpProvider,
+				provider: provider.HttpProvider,
 				queryPromise: Promise,
 			): Promise<MethodSender>
 		}
@@ -358,7 +504,7 @@ declare module "tonweb" {
 			public defaultVersion: string
 			public default: typeof WalletContract
 
-			public constructor(public provider: HttpProvider)
+			public constructor(public provider: provider.HttpProvider)
 
 			public static create(options: contract.Options): WalletContract
 		}
@@ -370,7 +516,7 @@ declare module "tonweb" {
 		public static Address: typeof utils.Address
 		public static boc: boc
 		public static Contract: typeof contract.Contract
-		public static HttpProvider: typeof HttpProvider
+		public static HttpProvider: typeof provider.HttpProvider
 		public static Wallets: typeof contract.Wallets
 
 		public version: string
@@ -382,7 +528,7 @@ declare module "tonweb" {
 		// public InMemoryBlockStorage
 		public wallet: typeof contract.Wallets
 
-		public constructor(public provider: HttpProvider)
+		public constructor(public provider: provider.HttpProvider)
 
 		getTransactions(
 			address: utils.Address | string,
@@ -400,8 +546,8 @@ declare module "tonweb" {
 
 		public call(
 			address: utils.Address | string,
-			method: MethodId,
-			params: CallMethodParams = [],
+			method: provider.MethodId,
+			params: provider.CallMethodParams = [],
 		): Promise<any>
 	}
 }

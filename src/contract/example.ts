@@ -1,4 +1,4 @@
-import TonWeb, { HttpProvider, boc, contract } from "tonweb"
+import TonWeb, { boc, contract, provider } from "tonweb"
 
 const {
 	Contract,
@@ -7,7 +7,10 @@ const {
 } = TonWeb
 
 class Example extends Contract {
-	public constructor(provider: HttpProvider, options: contract.Options) {
+	public constructor(
+		provider: provider.HttpProvider,
+		options: contract.Options,
+	) {
 		const code = Cell.oneFromBoc(
 			"B5EE9C72410108010072000114FF00F4A413F4BCF2C80B0102012002030201480405006EF28308D71820D31FED44D0D31FD3FFD15131BAF2A103F901541042F910F2A2F8005120D74A96D307D402FB00DED1A4C8CB1FCBFFC9ED540004D03002014806070017BB39CED44D0D31F31D70BFF80011B8C97ED44D0D70B1F8E93924A9",
 		)
