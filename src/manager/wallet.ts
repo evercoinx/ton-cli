@@ -1,12 +1,7 @@
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb, { contract } from "tonweb"
-import { CommonResponse, FeeResponse } from "tonapi"
+import TonWeb, { contract, utils } from "tonweb"
 
 import BaseManager from "./base"
-
-const {
-	utils: { BN, Address },
-} = TonWeb
 
 class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
@@ -22,7 +17,7 @@ class WalletManager extends BaseManager {
 		try {
 			console.log(`\nContract information:`)
 
-			const contractAddress = new Address(address)
+			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
 				address: contractAddress,
 			})
@@ -48,9 +43,9 @@ class WalletManager extends BaseManager {
 		memo: string,
 	): Promise<void> {
 		try {
-			console.log(`\nWallet transfer operation:`)
+			console.log(`\nWallet transfer:`)
 
-			const recipientAddress = new Address(recipient)
+			const recipientAddress = new utils.Address(recipient)
 			if (!recipientAddress.isUserFriendly) {
 				throw new Error(
 					`Recipient's wallet address should be in user friendly format`,
@@ -76,13 +71,13 @@ class WalletManager extends BaseManager {
 			const mnemonic = await this.loadMnemonic(sender)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const wallet = this.tonweb.wallet.create({
+			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 			})
 
-			const amountNano = this.tonweb.utils.toNano(amount)
+			const amountNano = utils.toNano(amount)
 			const senderBalance = await this.tonweb.getBalance(sender)
-			if (amountNano.gt(new BN(senderBalance))) {
+			if (amountNano.gt(new utils.BN(senderBalance))) {
 				throw new Error(
 					`Transfer amount ${this.formatAmount(
 						amountNano,
@@ -91,27 +86,29 @@ class WalletManager extends BaseManager {
 			}
 
 			const seqno: number | null = await (
-				wallet.methods.seqno() as contract.MethodCallerRequest
+				contract.methods.seqno() as contract.MethodCallerRequest
 			).call()
 			if (seqno == null) {
-				throw new Error(`Wallet sequence number is undefined`)
+				throw new Error(
+					`Wallet sequence number is undefined. Probably wallet is uninitialized`,
+				)
 			}
 
-			const transferRequest = wallet.methods.transfer({
+			const transferRequest = contract.methods.transfer({
 				secretKey: keyPair.secretKey,
 				toAddress: recipientAddress,
 				amount: amountNano,
-				seqno: seqno || 0,
+				seqno,
 				payload: memo,
 				sendMode: 3,
 			}) as contract.MethodSenderRequest
 
-			const feeResponse: FeeResponse = await transferRequest.estimateFee()
+			const feeResponse = await transferRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: CommonResponse = await transferRequest.send()
+			const transferResponse = await transferRequest.send()
 			this.printResponse(
-				response,
+				transferResponse,
 				`${this.formatAmount(
 					amountNano,
 				)} were transferred successfully`,

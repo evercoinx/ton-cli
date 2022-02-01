@@ -1,10 +1,6 @@
-import TonWeb, { contract } from "tonweb"
+import TonWeb, { contract, utils } from "tonweb"
 
 import BaseManager from "./base"
-
-const {
-	utils: { Address },
-} = TonWeb
 
 class ExampleManager extends BaseManager {
 	public constructor(
@@ -18,7 +14,7 @@ class ExampleManager extends BaseManager {
 		try {
 			console.log(`\nContract information:`)
 
-			const contractAddress = new Address(address)
+			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
 				address: contractAddress,
 			})

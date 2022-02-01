@@ -9,7 +9,7 @@ declare module "tonweb" {
 
 		export class Address {
 			wc: number
-			hashPart: string
+			hashPart: Uint8Array
 			isUserFriendly: boolean
 			isUrlSafe: boolean
 			isBounceable: boolean
@@ -175,7 +175,7 @@ declare module "tonweb" {
 	declare namespace provider {
 		type AccountState = "uninitialized" | "active"
 
-		interface Error {
+		export interface Error {
 			"@type": "error"
 			code: number
 			message: string
@@ -232,8 +232,8 @@ declare module "tonweb" {
 			block_id: Block
 			frozen_hash: string
 			sync_utime: number
-			"@extra": string
 			state: AccountState
+			"@extra": string
 		}
 
 		interface WalletInfo {
@@ -313,6 +313,26 @@ declare module "tonweb" {
 			"@extra": string
 		}
 
+		export interface Send {
+			"@type": "ok"
+			"@extra": string
+		}
+
+		export interface SourceFees {
+			"@type": "fees"
+			gas_fee: number
+			in_fwd_fee: number
+			fwd_fee: number
+			storage_fee: number
+		}
+
+		export interface Fees {
+			"@type": "query.fees"
+			source_fees: SourceFees
+			destination_fees: []
+			"@extra": string
+		}
+
 		type MethodId = string | number
 
 		type CallMethodParams = [string, any][]
@@ -385,26 +405,25 @@ declare module "tonweb" {
 	}
 
 	declare namespace contract {
-		export interface StateInit {
+		interface StateInit {
 			stateInit: boc.Cell
+			code: boc.Cell
+			data: boc.Cell
 			address: utils.Address
+		}
+
+		interface Message {
+			message: boc.Cell
+			body: boc.Cell
+			address: utils.Address
+		}
+
+		export interface InitExternalMessage extends Message {
 			code: boc.Cell
 			data: boc.Cell
 		}
 
-		export interface InitExternalMessage extends StateInit {
-			message: boc.Cell
-			body: boc.Cell
-			signingMessage: boc.Cell
-		}
-
-		export interface ExternalMessage {
-			address: utils.Address
-			message: boc.Cell
-			body: boc.Cell
-			signature: Uint8Array
-			signingMessage: boc.Cell
-			stateInit?: boc.Cell
+		export interface ExternalMessage extends Message {
 			code?: boc.Cell
 			data?: boc.Cell
 		}
@@ -416,12 +435,12 @@ declare module "tonweb" {
 		export type MethodCaller = () => MethodCallerRequest
 
 		export interface MethodSenderRequest {
-			send: () => Promise<any>
-			getQuery: () => Promise<any>
-			estimateFee: () => Promise<any>
+			send: () => Promise<provider.Send | provider.Error>
+			getQuery: () => Promise<boc.Cell>
+			estimateFee: () => Promise<provider.Fees | provider.Error>
 		}
 
-		export type MethodSender = (params?: Object) => MethodSenderRequest
+		export type MethodSender = (params?: object) => MethodSenderRequest
 
 		export interface Methods {
 			[methodName: string]: MethodCaller | MethodSender
@@ -472,7 +491,7 @@ declare module "tonweb" {
 				bounce?: boolean,
 				bounced? = false,
 				src?: utils.Address | string,
-				currencyCollection: undefined,
+				currencyCollection?: undefined,
 				ihrFees?: number | BN = 0,
 				fwdFees?: number | BN = 0,
 				createdLt?: number | BN = 0,
@@ -487,8 +506,8 @@ declare module "tonweb" {
 
 			public static createMethod(
 				provider: provider.HttpProvider,
-				queryPromise: Promise,
-			): Promise<MethodSender>
+				queryPromise: Promise<InitExternalMessage | ExternalMessage>,
+			): MethodSender
 		}
 
 		class WalletContract extends Contract {
@@ -510,13 +529,19 @@ declare module "tonweb" {
 		}
 	}
 
+	export const HttpProvider = provider.HttpProvider
+
+	export const Contract = contract.Contract
+
+	export const Wallets = contract.Wallets
+
 	export default class TonWeb {
 		public static version: string
 		public static utils: utils
 		public static Address: typeof utils.Address
 		public static boc: boc
-		public static Contract: typeof contract.Contract
 		public static HttpProvider: typeof provider.HttpProvider
+		public static Contract: typeof contract.Contract
 		public static Wallets: typeof contract.Wallets
 
 		public version: string

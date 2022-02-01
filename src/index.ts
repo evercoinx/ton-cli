@@ -2,13 +2,12 @@
 import "dotenv/config"
 import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
-import TonWeb from "tonweb"
+import TonWeb, { HttpProvider, Wallets } from "tonweb"
 
 import WalletManager from "./manager/wallet"
 import ExampleManager from "./manager/example"
 import Example from "./contract/example"
 
-const { HttpProvider, Wallets } = TonWeb
 const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST || "")
 const tonweb = new TonWeb(provider)
 

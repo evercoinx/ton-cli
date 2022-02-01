@@ -1,11 +1,6 @@
 import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb, { contract, utils } from "tonweb"
-import { CommonResponse, FeeResponse, SourceFees } from "tonapi"
-
-const {
-	utils: { Address },
-} = TonWeb
+import TonWeb, { contract, provider, utils } from "tonweb"
 
 interface AddressToMnemonic {
 	[key: string]: string[]
@@ -31,7 +26,7 @@ abstract class BaseManager {
 
 	public async prepare(workchain = 0): Promise<void> {
 		try {
-			console.log(`\nContract preparation operation:`)
+			console.log(`\nContract preparation:`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
@@ -61,9 +56,9 @@ abstract class BaseManager {
 
 	public async deploy(address: string): Promise<void> {
 		try {
-			console.log(`\nExample deployment operation:`)
+			console.log(`\nContract deployment:`)
 
-			const contractAddress = new Address(address)
+			const contractAddress = new utils.Address(address)
 			if (!contractAddress.isUserFriendly) {
 				throw new Error(
 					`Contract address should be in user friendly format`,
@@ -83,11 +78,14 @@ abstract class BaseManager {
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
 
-			const feeResponse: FeeResponse = await deployRequest.estimateFee()
+			const feeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const response: CommonResponse = await deployRequest.send()
-			this.printResponse(response, `Contract was deployed successfully`)
+			const deployResponse = await deployRequest.send()
+			this.printResponse(
+				deployResponse,
+				`Contract was deployed successfully`,
+			)
 		} catch (err: unknown) {
 			this.printError(err)
 		}
@@ -128,7 +126,7 @@ abstract class BaseManager {
 	}
 
 	protected formatAmount(amount: number | string): string {
-		return `${this.tonweb.utils.fromNano(amount)} TON`
+		return `${utils.fromNano(amount)} TON`
 	}
 
 	protected printAddressInfo(address: utils.Address): void {
@@ -149,7 +147,7 @@ abstract class BaseManager {
 		)
 	}
 
-	protected printFees(response: FeeResponse): void {
+	protected printFees(response: provider.Fees | provider.Error): void {
 		if (response["@type"] !== "query.fees") {
 			throw new Error(
 				`code: ${response.code}, message: ${response.message}`,
@@ -166,7 +164,7 @@ abstract class BaseManager {
 		console.log(`- Total fee:      ${this.formatAmount(totalFee)}`)
 	}
 
-	private getTransactionFees(fees: SourceFees): TransactionFees {
+	private getTransactionFees(fees: provider.SourceFees): TransactionFees {
 		const {
 			gas_fee: gasFee,
 			in_fwd_fee: inFwdFee,
@@ -183,7 +181,7 @@ abstract class BaseManager {
 	}
 
 	protected printResponse(
-		response: CommonResponse,
+		response: provider.Send | provider.Error,
 		successMessage: string,
 	): void {
 		if (response["@type"] !== "ok") {
