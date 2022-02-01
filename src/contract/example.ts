@@ -1,8 +1,8 @@
-import { boc, Contract, contract, provider, utils } from "tonweb"
+import { boc, Contract, contract, providers, utils } from "tonweb"
 
 class Example extends Contract {
 	public constructor(
-		provider: provider.HttpProvider,
+		provider: providers.HttpProvider,
 		options: contract.Options,
 	) {
 		const code = boc.Cell.oneFromBoc(

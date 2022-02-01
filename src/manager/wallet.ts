@@ -45,7 +45,7 @@ class WalletManager extends BaseManager {
 		memo: string,
 	): Promise<void> {
 		try {
-			this.logger.info(`\nWallet transfer:`)
+			this.logger.info(`Wallet transfer:`)
 			if (!utils.Address.isValid(sender)) {
 				throw new Error(`Invalid sender's address`)
 			}

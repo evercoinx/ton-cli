@@ -172,7 +172,7 @@ declare module "tonweb" {
 		}
 	}
 
-	declare namespace provider {
+	declare namespace providers {
 		type AccountState = "uninitialized" | "active" | "frozen"
 
 		export interface Error {
@@ -350,22 +350,20 @@ declare module "tonweb" {
 
 			public getWalletInfo(address: string): Promise<WalletInfo | Error>
 
-			getTransactions(
-				address: utils.Address | string,
-				limit = 20,
+			public getTransactions(
+				address: string,
+				limit? = 20,
 				lt?: number,
 				txHash?: string,
 				toLt?: number,
 			): Promise<Transaction[] | Error>
 
-			public async getBalance(
-				address: utils.Address | string,
-			): Promise<string>
+			public async getBalance(address: string): Promise<string>
 
-			public sendBoc(bytes: Uint8Array): Promise<any>
+			public sendBoc(bytes: Uint8Array): Promise<Send | Error>
 
 			public call(
-				address: utils.Address | string,
+				address: string,
 				method: MethodId,
 				params: CallMethodParams = [],
 			): Promise<any>
@@ -404,6 +402,30 @@ declare module "tonweb" {
 		}
 	}
 
+	declare namespace blockSubscription {
+		interface Options {
+			startMcBlockNumber?: number
+			mcInterval?: number
+			shardsInterval?: number
+		}
+
+		export class BlockSubscription {
+			public startMcBlockNumber: Pick<Options, "startMcBlockNumber">
+			public mcInterval?: Pick<Options, "mcInterval">
+			public shardsInterval?: Pick<Options, "shardsInterval">
+
+			constructor(
+				public provider: providers.HttpProvider,
+				public storage: any,
+				public onBlock: ({ blockHeader: BlockHeader }) => Promise<void>,
+				public options: Options,
+			)
+
+			public start(): Promise<void>
+			public stop(): Promise<void>
+		}
+	}
+
 	declare namespace contract {
 		interface StateInit {
 			stateInit: boc.Cell
@@ -435,9 +457,9 @@ declare module "tonweb" {
 		export type MethodCaller = () => MethodCallerRequest
 
 		export interface MethodSenderRequest {
-			send: () => Promise<provider.Send | provider.Error>
+			send: () => Promise<providers.Send | providers.Error>
 			getQuery: () => Promise<boc.Cell>
-			estimateFee: () => Promise<provider.Fees | provider.Error>
+			estimateFee: () => Promise<providers.Fees | providers.Error>
 		}
 
 		export type MethodSender = (params?: object) => MethodSenderRequest
@@ -458,7 +480,7 @@ declare module "tonweb" {
 			public methods: Methods
 
 			public constructor(
-				public provider: provider.HttpProvider,
+				public provider: providers.HttpProvider,
 				public options: Options,
 			)
 
@@ -505,7 +527,7 @@ declare module "tonweb" {
 			): boc.Cell
 
 			public static createMethod(
-				provider: provider.HttpProvider,
+				provider: providers.HttpProvider,
 				queryPromise: Promise<InitExternalMessage | ExternalMessage>,
 			): MethodSender
 		}
@@ -523,13 +545,13 @@ declare module "tonweb" {
 			public defaultVersion: string
 			public default: typeof WalletContract
 
-			public constructor(public provider: provider.HttpProvider)
+			public constructor(public provider: providers.HttpProvider)
 
 			public static create(options: contract.Options): WalletContract
 		}
 	}
 
-	export const HttpProvider = provider.HttpProvider
+	export const HttpProvider = providers.HttpProvider
 
 	export const Contract = contract.Contract
 
@@ -540,7 +562,7 @@ declare module "tonweb" {
 		public static utils: utils
 		public static Address: typeof utils.Address
 		public static boc: boc
-		public static HttpProvider: typeof provider.HttpProvider
+		public static HttpProvider: typeof providers.HttpProvider
 		public static Contract: typeof contract.Contract
 		public static Wallets: typeof contract.Wallets
 
@@ -549,30 +571,30 @@ declare module "tonweb" {
 		public Address: typeof utils.Address
 		public boc: boc
 		public Contract: typeof contract.Contract
-		// public BlockSubscription
+		public BlockSubscription: blockSubscription.BlockSubscription
 		// public InMemoryBlockStorage
 		public wallet: typeof contract.Wallets
 
-		public constructor(public provider: provider.HttpProvider)
+		public constructor(public provider: providers.HttpProvider)
 
-		getTransactions(
-			address: utils.Address | string,
-			limit = 20,
+		public getTransactions(
+			address: string,
+			limit? = 20,
 			lt?: number,
 			txHash?: string,
 			toLt?: number,
-		): Promise<any[]>
+		): Promise<providers.Transaction[] | providers.Error>
 
-		public async getBalance(
-			address: utils.Address | string,
-		): Promise<string>
+		public async getBalance(address: string): Promise<string>
 
-		public sendBoc(bytes: Uint8Array): Promise<any>
+		public sendBoc(
+			bytes: Uint8Array,
+		): Promise<providers.Send | providers.Error>
 
 		public call(
-			address: utils.Address | string,
-			method: provider.MethodId,
-			params: provider.CallMethodParams = [],
+			address: string,
+			method: providers.MethodId,
+			params: providers.CallMethodParams = [],
 		): Promise<any>
 	}
 }

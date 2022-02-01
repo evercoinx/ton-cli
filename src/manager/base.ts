@@ -1,6 +1,6 @@
 import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb, { contract, provider, utils } from "tonweb"
+import TonWeb, { contract, providers, utils } from "tonweb"
 import { Logger } from "winston"
 
 interface AddressToMnemonic {
@@ -28,7 +28,7 @@ abstract class BaseManager {
 
 	public async prepare(workchain = 0): Promise<void> {
 		try {
-			this.logger.info(`\nContract preparation:`)
+			this.logger.info(`Contract preparation:`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
@@ -48,9 +48,8 @@ abstract class BaseManager {
 			this.printFees(feeResponse)
 
 			const nonBounceableAddress = address.toString(true, true, false)
-			this.logger.info(
-				`Contract is ready to be deployed. Send some Toncoin to ${nonBounceableAddress}`,
-			)
+			this.logger.info(`Contract is ready to be deployed`)
+			this.logger.info(`Send some Toncoin to ${nonBounceableAddress}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
@@ -58,7 +57,7 @@ abstract class BaseManager {
 
 	public async deploy(address: string): Promise<void> {
 		try {
-			this.logger.info(`\nContract deployment:`)
+			this.logger.info(`Contract deployment:`)
 
 			const contractAddress = new utils.Address(address)
 			if (!contractAddress.isUserFriendly) {
@@ -149,7 +148,7 @@ abstract class BaseManager {
 		)
 	}
 
-	protected printFees(response: provider.Fees | provider.Error): void {
+	protected printFees(response: providers.Fees | providers.Error): void {
 		if (response["@type"] !== "query.fees") {
 			throw new Error(
 				`code: ${response.code}, message: ${response.message}`,
@@ -158,15 +157,15 @@ abstract class BaseManager {
 
 		const { gasFee, inFwdFee, fwdFee, storageFee, totalFee } =
 			this.getTransactionFees(response.source_fees)
-		this.logger.info(`Fees:`)
-		this.logger.info(`Gas fee:        ${this.formatAmount(gasFee)}`)
-		this.logger.info(`In-Forward fee: ${this.formatAmount(inFwdFee)}`)
-		this.logger.info(`Forward fee:    ${this.formatAmount(fwdFee)}`)
-		this.logger.info(`Storage fee:    ${this.formatAmount(storageFee)}`)
-		this.logger.info(`Total fee:      ${this.formatAmount(totalFee)}`)
+		this.logger.info(`Estimated fees:`)
+		this.logger.info(`  gas fee        ${this.formatAmount(gasFee)}`)
+		this.logger.info(`  in-forward fee ${this.formatAmount(inFwdFee)}`)
+		this.logger.info(`  forward fee    ${this.formatAmount(fwdFee)}`)
+		this.logger.info(`  storage fee    ${this.formatAmount(storageFee)}`)
+		this.logger.info(`  total fee      ${this.formatAmount(totalFee)}`)
 	}
 
-	private getTransactionFees(fees: provider.SourceFees): TransactionFees {
+	private getTransactionFees(fees: providers.SourceFees): TransactionFees {
 		const {
 			gas_fee: gasFee,
 			in_fwd_fee: inFwdFee,
@@ -183,7 +182,7 @@ abstract class BaseManager {
 	}
 
 	protected printResponse(
-		response: provider.Send | provider.Error,
+		response: providers.Send | providers.Error,
 		successMessage: string,
 	): void {
 		if (response["@type"] !== "ok") {
