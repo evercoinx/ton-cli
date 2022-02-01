@@ -46,23 +46,26 @@ class WalletManager extends BaseManager {
 	): Promise<void> {
 		try {
 			this.logger.info(`\nWallet transfer:`)
+			if (!utils.Address.isValid(sender)) {
+				throw new Error(`Invalid sender's address`)
+			}
 
 			const recipientAddress = new utils.Address(recipient)
 			if (!recipientAddress.isUserFriendly) {
 				throw new Error(
-					`Recipient's wallet address should be in user friendly format`,
+					`Recipient's address should be in user friendly format`,
 				)
 			}
 
 			if (stateInit && recipientAddress.isBounceable) {
 				throw new Error(
-					`Recipient's wallet address should be non-bounceable for state init operation`,
+					`Recipient's address should be non-bounceable for state init operation`,
 				)
 			}
 
 			if (!stateInit && !recipientAddress.isBounceable) {
 				throw new Error(
-					`Recipient's wallet address should be bounceable for any not state init operation`,
+					`Recipient's address should be bounceable for any not state init operation`,
 				)
 			}
 

@@ -53,7 +53,7 @@ class Example extends Contract {
 		return cell
 	}
 
-	private createSigningMessage(seqno: number = 0): boc.Cell {
+	private createSigningMessage(seqno = 0): boc.Cell {
 		const cell = new boc.Cell()
 		cell.bits.writeUint(seqno, 32)
 		return cell

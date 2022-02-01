@@ -173,7 +173,7 @@ declare module "tonweb" {
 	}
 
 	declare namespace provider {
-		type AccountState = "uninitialized" | "active"
+		type AccountState = "uninitialized" | "active" | "frozen"
 
 		export interface Error {
 			"@type": "error"
@@ -193,11 +193,11 @@ declare module "tonweb" {
 
 		interface TransactionId {
 			"@type": "internal.transactionId"
-			lt: string
 			hash: string
+			lt: string
 		}
 
-		interface ExtendedTransactionId extends TransactionId {
+		interface AccountTransactionId extends TransactionId {
 			"@type": "blocks.shortTxId"
 			mode: number
 			account: string
@@ -309,7 +309,7 @@ declare module "tonweb" {
 			id: Block
 			req_count: number
 			incomplete: boolean
-			transactions: ExtendedTransactionId[]
+			transactions: AccountTransactionId[]
 			"@extra": string
 		}
 
