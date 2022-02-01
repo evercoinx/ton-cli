@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import "dotenv/config"
+import joi from "joi"
 import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
 import TonWeb, { HttpProvider, Wallets } from "tonweb"
@@ -8,16 +9,52 @@ import WalletManager from "./manager/wallet"
 import ExampleManager from "./manager/example"
 import Example from "./contract/example"
 
-const provider = new HttpProvider(process.env.HTTP_PROVIDER_HOST || "")
+const schema = joi
+	.object()
+	.keys({
+		NODE_ENV: joi.string().valid("production", "development").required(),
+		NODE_HTTP_PROVIDER_HOST: joi.string().uri().required(),
+		NODE_WALLET_VERSION: joi
+			.string()
+			.valid(
+				"simpleR1",
+				"simpleR2",
+				"simpleR3",
+				"v2R1",
+				"v2R2",
+				"v3R1",
+				"v3R2",
+				"v4R1",
+				"v4R2",
+			)
+			.required(),
+	})
+	.unknown()
+
+const { value: envVars, error } = schema
+	.prefs({ errors: { label: "key" } })
+	.validate(process.env)
+
+if (error) {
+	throw new Error(`Environment validation error: ${error.message}`)
+}
+
+const provider = new HttpProvider(envVars.NODE_HTTP_PROVIDER_HOST)
 const tonweb = new TonWeb(provider)
 
+const walletContract = "wallet"
+const exampleContract = "example"
+
 const wallets = new Wallets(provider)
-const walletManager = new WalletManager(tonweb, wallets.all.v3R2)
+const walletManager = new WalletManager(
+	tonweb,
+	wallets.all[envVars.NODE_WALLET_VERSION],
+)
 const exampleManager = new ExampleManager(tonweb, Example as any)
 
 const contractToManager = {
-	wallet: walletManager,
-	example: exampleManager,
+	[walletContract]: walletManager,
+	[exampleContract]: exampleManager,
 }
 
 const createPrepareCommand = (contract: string) => ({
@@ -64,9 +101,6 @@ const createInfoCommand = (contract: string) => ({
 		await contractToManager[contract].info(address)
 	},
 })
-
-const walletContract = "wallet"
-const exampleContract = "example"
 
 ;(async () => {
 	yargs(hideBin(process.argv))
