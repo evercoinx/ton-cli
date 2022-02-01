@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import "dotenv/config"
 import joi from "joi"
+import TonWeb, { HttpProvider, Wallets } from "tonweb"
 import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
-import TonWeb, { HttpProvider, Wallets } from "tonweb"
 
+import Example from "./contract/example"
+import createLogger from "./logger"
 import WalletManager from "./manager/wallet"
 import ExampleManager from "./manager/example"
-import Example from "./contract/example"
 
 const schema = joi
 	.object()
@@ -45,12 +46,14 @@ const tonweb = new TonWeb(provider)
 const walletContract = "wallet"
 const exampleContract = "example"
 
+const logger = createLogger(envVars.NODE_ENV)
 const wallets = new Wallets(provider)
 const walletManager = new WalletManager(
-	tonweb,
 	wallets.all[envVars.NODE_WALLET_VERSION],
+	tonweb,
+	logger,
 )
-const exampleManager = new ExampleManager(tonweb, Example as any)
+const exampleManager = new ExampleManager(Example as any, tonweb, logger)
 
 const contractToManager = {
 	[walletContract]: walletManager,

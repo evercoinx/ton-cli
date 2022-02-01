@@ -1,5 +1,6 @@
-import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb, { contract, utils } from "tonweb"
+import tonMnemonic = require("tonweb-mnemonic")
+import { Logger } from "winston"
 
 import BaseManager from "./base"
 
@@ -7,15 +8,16 @@ class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(
-		protected tonweb: TonWeb,
 		Contract: typeof contract.WalletContract,
+		protected tonweb: TonWeb,
+		protected logger: Logger,
 	) {
-		super(tonweb, Contract)
+		super(Contract, tonweb, logger)
 	}
 
 	public async info(address: string): Promise<void> {
 		try {
-			console.log(`\nContract information:`)
+			this.logger.info(`Contract information:`)
 
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
@@ -28,10 +30,10 @@ class WalletManager extends BaseManager {
 			const balance = await this.tonweb.getBalance(address)
 
 			this.printAddressInfo(contractAddress)
-			console.log(`- Balance: ${this.formatAmount(balance)}`)
-			console.log(`- Sequence number: ${seqno}`)
+			this.logger.info(`Balance: ${this.formatAmount(balance)}`)
+			this.logger.info(`Sequence number: ${seqno}`)
 		} catch (err: unknown) {
-			this.printError(err)
+			this.logger.error(err)
 		}
 	}
 
@@ -43,7 +45,7 @@ class WalletManager extends BaseManager {
 		memo: string,
 	): Promise<void> {
 		try {
-			console.log(`\nWallet transfer:`)
+			this.logger.info(`\nWallet transfer:`)
 
 			const recipientAddress = new utils.Address(recipient)
 			if (!recipientAddress.isUserFriendly) {
@@ -114,7 +116,7 @@ class WalletManager extends BaseManager {
 				)} were transferred successfully`,
 			)
 		} catch (err: unknown) {
-			this.printError(err)
+			this.logger.error(err)
 		}
 	}
 }

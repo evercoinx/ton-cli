@@ -1,18 +1,20 @@
 import TonWeb, { contract, utils } from "tonweb"
+import { Logger } from "winston"
 
 import BaseManager from "./base"
 
 class ExampleManager extends BaseManager {
 	public constructor(
-		protected tonweb: TonWeb,
 		protected Contract: typeof contract.WalletContract,
+		protected tonweb: TonWeb,
+		protected logger: Logger,
 	) {
-		super(tonweb, Contract)
+		super(Contract, tonweb, logger)
 	}
 
 	public async info(address: string): Promise<void> {
 		try {
-			console.log(`\nContract information:`)
+			this.logger.info(`Contract information:`)
 
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
@@ -28,11 +30,11 @@ class ExampleManager extends BaseManager {
 			).call()
 
 			this.printAddressInfo(contractAddress)
-			console.log(`- Balance: ${this.formatAmount(balance)}`)
-			console.log(`- Sequence number: ${seqno}`)
-			console.log(`- Public key: ${publicKey}`)
+			this.logger.info(`Balance: ${this.formatAmount(balance)}`)
+			this.logger.info(`Sequence number: ${seqno}`)
+			this.logger.info(`Public key: ${publicKey}`)
 		} catch (err: unknown) {
-			this.printError(err)
+			this.logger.error(err)
 		}
 	}
 }

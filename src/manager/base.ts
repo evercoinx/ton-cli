@@ -1,6 +1,7 @@
 import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb, { contract, provider, utils } from "tonweb"
+import { Logger } from "winston"
 
 interface AddressToMnemonic {
 	[key: string]: string[]
@@ -18,15 +19,16 @@ abstract class BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(
-		protected tonweb: TonWeb,
 		protected Contract: typeof contract.WalletContract,
+		protected tonweb: TonWeb,
+		protected logger: Logger,
 	) {}
 
 	public abstract info(address: string): Promise<void>
 
 	public async prepare(workchain = 0): Promise<void> {
 		try {
-			console.log(`\nContract preparation:`)
+			this.logger.info(`\nContract preparation:`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
@@ -46,17 +48,17 @@ abstract class BaseManager {
 			this.printFees(feeResponse)
 
 			const nonBounceableAddress = address.toString(true, true, false)
-			console.log(
+			this.logger.info(
 				`Contract is ready to be deployed. Send some Toncoin to ${nonBounceableAddress}`,
 			)
 		} catch (err: unknown) {
-			this.printError(err)
+			this.logger.error(err)
 		}
 	}
 
 	public async deploy(address: string): Promise<void> {
 		try {
-			console.log(`\nContract deployment:`)
+			this.logger.info(`\nContract deployment:`)
 
 			const contractAddress = new utils.Address(address)
 			if (!contractAddress.isUserFriendly) {
@@ -87,7 +89,7 @@ abstract class BaseManager {
 				`Contract was deployed successfully`,
 			)
 		} catch (err: unknown) {
-			this.printError(err)
+			this.logger.error(err)
 		}
 	}
 
@@ -103,7 +105,7 @@ abstract class BaseManager {
 			BaseManager.mnemonicFilename,
 			JSON.stringify(mnemonic, null, 4),
 		)
-		console.log(
+		this.logger.info(
 			`Address mnemonic was saved to ${BaseManager.mnemonicFilename}`,
 		)
 	}
@@ -130,16 +132,16 @@ abstract class BaseManager {
 	}
 
 	protected printAddressInfo(address: utils.Address): void {
-		console.log(`- Raw address: ${address.toString(false, true, true)}`)
-		console.log(
-			`- Non-bounceable address (for init):     ${address.toString(
+		this.logger.info(`Raw address: ${address.toString(false, true, true)}`)
+		this.logger.info(
+			`Non-bounceable address (for init):     ${address.toString(
 				true,
 				true,
 				false,
 			)}`,
 		)
-		console.log(
-			`- Bounceable address (for later access): ${address.toString(
+		this.logger.info(
+			`Bounceable address (for later access): ${address.toString(
 				true,
 				true,
 				true,
@@ -156,12 +158,12 @@ abstract class BaseManager {
 
 		const { gasFee, inFwdFee, fwdFee, storageFee, totalFee } =
 			this.getTransactionFees(response.source_fees)
-		console.log(`Fees:`)
-		console.log(`- Gas fee:        ${this.formatAmount(gasFee)}`)
-		console.log(`- In-Forward fee: ${this.formatAmount(inFwdFee)}`)
-		console.log(`- Forward fee:    ${this.formatAmount(fwdFee)}`)
-		console.log(`- Storage fee:    ${this.formatAmount(storageFee)}`)
-		console.log(`- Total fee:      ${this.formatAmount(totalFee)}`)
+		this.logger.info(`Fees:`)
+		this.logger.info(`Gas fee:        ${this.formatAmount(gasFee)}`)
+		this.logger.info(`In-Forward fee: ${this.formatAmount(inFwdFee)}`)
+		this.logger.info(`Forward fee:    ${this.formatAmount(fwdFee)}`)
+		this.logger.info(`Storage fee:    ${this.formatAmount(storageFee)}`)
+		this.logger.info(`Total fee:      ${this.formatAmount(totalFee)}`)
 	}
 
 	private getTransactionFees(fees: provider.SourceFees): TransactionFees {
@@ -189,12 +191,7 @@ abstract class BaseManager {
 				`code: ${response.code}, message: ${response.message}`,
 			)
 		}
-		console.log(successMessage)
-	}
-
-	protected printError(err: unknown): void {
-		console.error(`Error occurred!`)
-		console.error(err)
+		this.logger.info(successMessage)
 	}
 }
 
