@@ -15,6 +15,13 @@ interface TransactionFees {
 	totalFee: number
 }
 
+/* eslint-disable no-unused-vars */
+export enum SendMode {
+	SenderPaysFees = 1,
+	IgnoreErrors = 2,
+}
+/* eslint-enable no-unused-vars */
+
 abstract class BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
@@ -49,7 +56,7 @@ abstract class BaseManager {
 
 			const nonBounceableAddress = address.toString(true, true, false)
 			this.logger.info(`Contract is ready to be deployed`)
-			this.logger.info(`Send some Toncoin to ${nonBounceableAddress}`)
+			this.logger.info(`Send some TON coin to ${nonBounceableAddress}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}

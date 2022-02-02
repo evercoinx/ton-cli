@@ -2,7 +2,7 @@ import TonWeb, { contract, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
 
-import BaseManager from "./base"
+import BaseManager, { SendMode } from "./base"
 
 class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
@@ -105,7 +105,7 @@ class WalletManager extends BaseManager {
 				amount: amountNano,
 				seqno,
 				payload: memo,
-				sendMode: 3,
+				sendMode: SendMode.SenderPaysFees | SendMode.IgnoreErrors,
 			}) as contract.MethodSenderRequest
 
 			const feeResponse = await transferRequest.estimateFee()

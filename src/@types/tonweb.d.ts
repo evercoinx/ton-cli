@@ -243,6 +243,22 @@ declare module "tonweb" {
 			last_transaction_id: TransactionId
 		}
 
+		interface Message {
+			"@type": "raw.message"
+			source: string
+			destination: string
+			value: string
+			fwd_fee: string
+			ihr_fee: string
+			created_lt: string
+			body_hash: string
+			msg_data: {
+				"@type": "msg.dataText"
+				text: string
+			}
+			message: string
+		}
+
 		interface Transaction {
 			"@type": "raw.transaction"
 			utime: number
@@ -251,22 +267,8 @@ declare module "tonweb" {
 			fee: string
 			storage_fee: string
 			other_fee: string
-			in_msg: {
-				"@type": "raw.message"
-				source: string
-				destination: string
-				value: string
-				fwd_fee: string
-				ihr_fee: string
-				created_lt: string
-				body_hash: string
-				msg_data: {
-					"@type": "msg.dataText"
-					text: string
-				}
-				message: string
-			}
-			out_msgs: []
+			in_msg: Message
+			out_msgs: Message[]
 		}
 
 		interface MasterchainInfo {
@@ -403,6 +405,32 @@ declare module "tonweb" {
 	}
 
 	declare namespace blockSubscription {
+		interface ShardBlock {
+			workchain: number
+			shardId: string
+			shardBlockNumber: number
+		}
+
+		export class InMemoryBlockStorage {
+			public constructor(public logFunction: (text: string) => void)
+
+			public insertBlocks(
+				mcBlockNumber: number,
+				shardBlockNumbers: ShardBlock[],
+			): Promise<void>
+
+			public setBlockProcessed(
+				workchain: Pick<ShardBlock, "number">,
+				shardId: Pick<ShardBlock, "shardId">,
+				shardBlockNumber: Pick<ShardBlock, "shardBlockNumber">,
+				prevShardBlocks: ShardBlock[],
+			): Promise<void>
+
+			public getLastMasterchainBlockNumber(): Promise<number | undefined>
+
+			public getUnprocessedShardBlock(): Promise<ShardBlock | undefined>
+		}
+
 		interface Options {
 			startMcBlockNumber?: number
 			mcInterval?: number
@@ -414,9 +442,9 @@ declare module "tonweb" {
 			public mcInterval?: Pick<Options, "mcInterval">
 			public shardsInterval?: Pick<Options, "shardsInterval">
 
-			constructor(
+			public constructor(
 				public provider: providers.HttpProvider,
-				public storage: any,
+				public storage: InMemoryBlockStorage,
 				public onBlock: ({ blockHeader: BlockHeader }) => Promise<void>,
 				public options: Options,
 			)
@@ -551,11 +579,17 @@ declare module "tonweb" {
 		}
 	}
 
+	export const Address = utils.Address
+
 	export const HttpProvider = providers.HttpProvider
 
 	export const Contract = contract.Contract
 
 	export const Wallets = contract.Wallets
+
+	export const BlockSubscription = blockSubscription.BlockSubscription
+
+	export const InMemoryBlockStorage = blockSubscription.InMemoryBlockStorage
 
 	export default class TonWeb {
 		public static version: string
@@ -565,15 +599,17 @@ declare module "tonweb" {
 		public static HttpProvider: typeof providers.HttpProvider
 		public static Contract: typeof contract.Contract
 		public static Wallets: typeof contract.Wallets
+		public static BlockSubscription: blockSubscription.BlockSubscription
+		public static InMemoryBlockStorage: blockSubscription.InMemoryBlockStorage
 
-		public version: string
+		public version: Pick<TonWeb, "version">
 		public utils: utils
-		public Address: typeof utils.Address
+		public Address: Pick<TonWeb, "Address">
 		public boc: boc
-		public Contract: typeof contract.Contract
-		public BlockSubscription: blockSubscription.BlockSubscription
-		// public InMemoryBlockStorage
-		public wallet: typeof contract.Wallets
+		public Contract: Pick<TonWeb, "Contract">
+		public wallet: contract.Wallets
+		public BlockSubscription: Pick<TonWeb, "BlockSubscription">
+		public InMemoryBlockStorage: Pick<TonWeb, "InMemoryBlockStorage">
 
 		public constructor(public provider: providers.HttpProvider)
 
