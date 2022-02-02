@@ -119,10 +119,10 @@ const createInfoCommand = (contract: string) => ({
 			builder: (yargs: Argv) =>
 				yargs
 					.positional("sender", {
-						describe: "Sender's wallet address",
+						describe: "Sender wallet address",
 					})
 					.positional("recipient", {
-						describe: "Recipients's wallet address",
+						describe: "Recipient wallet address",
 					})
 					.positional("amount", {
 						describe: "Amount to transfer",

@@ -47,25 +47,25 @@ class WalletManager extends BaseManager {
 		try {
 			this.logger.info(`Wallet transfer:`)
 			if (!utils.Address.isValid(sender)) {
-				throw new Error(`Invalid sender's address`)
+				throw new Error(`Invalid sender address`)
 			}
 
 			const recipientAddress = new utils.Address(recipient)
 			if (!recipientAddress.isUserFriendly) {
 				throw new Error(
-					`Recipient's address should be in user friendly format`,
+					`Recipient address should be in user friendly format`,
 				)
 			}
 
 			if (stateInit && recipientAddress.isBounceable) {
 				throw new Error(
-					`Recipient's address should be non-bounceable for state init operation`,
+					`Recipient address should be non-bounceable for state init operation`,
 				)
 			}
 
 			if (!stateInit && !recipientAddress.isBounceable) {
 				throw new Error(
-					`Recipient's address should be bounceable for any not state init operation`,
+					`Recipient address should be bounceable for a non state-init operation`,
 				)
 			}
 
@@ -105,7 +105,8 @@ class WalletManager extends BaseManager {
 				amount: amountNano,
 				seqno,
 				payload: memo,
-				sendMode: SendMode.SenderPaysFees | SendMode.IgnoreErrors,
+				sendMode:
+					SendMode.SenderPaysForwardFees | SendMode.IgnoreErrors,
 			}) as contract.MethodSenderRequest
 
 			const feeResponse = await transferRequest.estimateFee()

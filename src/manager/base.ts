@@ -9,16 +9,20 @@ interface AddressToMnemonic {
 
 interface TransactionFees {
 	gasFee: number
-	inFwdFee: number
-	fwdFee: number
+	inboundForwardFee: number
+	forwardFee: number
 	storageFee: number
 	totalFee: number
 }
 
 /* eslint-disable no-unused-vars */
 export enum SendMode {
-	SenderPaysFees = 1,
+	Ordinary = 0,
+	SenderPaysForwardFees = 1,
 	IgnoreErrors = 2,
+	FreezeAccount = 32,
+	ReturnInboundMessageValue = 64,
+	ReturnAccountRemainingBalance = 128,
 }
 /* eslint-enable no-unused-vars */
 
@@ -133,8 +137,9 @@ abstract class BaseManager {
 		return addressMnemonic
 	}
 
-	protected formatAmount(amount: number | string): string {
-		return `${utils.fromNano(amount)} TON`
+	protected formatAmount(amountNano: number | string): string {
+		const amount = parseFloat(utils.fromNano(amountNano))
+		return `${amount.toFixed(9)} TON`
 	}
 
 	protected printAddressInfo(address: utils.Address): void {
@@ -162,29 +167,31 @@ abstract class BaseManager {
 			)
 		}
 
-		const { gasFee, inFwdFee, fwdFee, storageFee, totalFee } =
+		const { gasFee, inboundForwardFee, forwardFee, storageFee, totalFee } =
 			this.getTransactionFees(response.source_fees)
 		this.logger.info(`Estimated fees:`)
-		this.logger.info(`  gas fee        ${this.formatAmount(gasFee)}`)
-		this.logger.info(`  in-forward fee ${this.formatAmount(inFwdFee)}`)
-		this.logger.info(`  forward fee    ${this.formatAmount(fwdFee)}`)
-		this.logger.info(`  storage fee    ${this.formatAmount(storageFee)}`)
-		this.logger.info(`  total fee      ${this.formatAmount(totalFee)}`)
+		this.logger.info(`  ${this.formatAmount(gasFee)} - gas fee`)
+		this.logger.info(
+			`  ${this.formatAmount(inboundForwardFee)} - inbound forward fee`,
+		)
+		this.logger.info(`  ${this.formatAmount(forwardFee)} - forward fee`)
+		this.logger.info(`  ${this.formatAmount(storageFee)} - storage fee`)
+		this.logger.info(`  ${this.formatAmount(totalFee)} - total fee`)
 	}
 
 	private getTransactionFees(fees: providers.SourceFees): TransactionFees {
 		const {
 			gas_fee: gasFee,
-			in_fwd_fee: inFwdFee,
-			fwd_fee: fwdFee,
+			in_fwd_fee: inboundForwardFee,
+			fwd_fee: forwardFee,
 			storage_fee: storageFee,
 		} = fees
 		return {
 			gasFee,
-			inFwdFee,
-			fwdFee,
+			inboundForwardFee,
+			forwardFee,
 			storageFee,
-			totalFee: gasFee + inFwdFee + fwdFee + storageFee,
+			totalFee: gasFee + inboundForwardFee + forwardFee + storageFee,
 		}
 	}
 
