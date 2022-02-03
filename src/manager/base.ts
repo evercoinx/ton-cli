@@ -142,7 +142,16 @@ abstract class BaseManager {
 		return `${amount.toFixed(9)} TON`
 	}
 
-	protected printAddressInfo(address: utils.Address): void {
+	protected printAddressInfo(
+		address: utils.Address,
+		response: providers.AddressInfo | providers.Error,
+	): void {
+		if (response["@type"] === "error") {
+			throw new Error(
+				`code: ${response.code}, message: ${response.message}`,
+			)
+		}
+
 		this.logger.info(`Raw address: ${address.toString(false, true, true)}`)
 		this.logger.info(
 			`Non-bounceable address (for init):     ${address.toString(
@@ -158,10 +167,12 @@ abstract class BaseManager {
 				true,
 			)}`,
 		)
+		this.logger.info(`State: ${response.state}`)
+		this.logger.info(`Balance: ${this.formatAmount(response.balance)}`)
 	}
 
 	protected printFees(response: providers.Fees | providers.Error): void {
-		if (response["@type"] !== "query.fees") {
+		if (response["@type"] === "error") {
 			throw new Error(
 				`code: ${response.code}, message: ${response.message}`,
 			)

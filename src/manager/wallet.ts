@@ -24,13 +24,14 @@ class WalletManager extends BaseManager {
 				address: contractAddress,
 			})
 
+			const addressInfo = await this.tonweb.provider.getAddressInfo(
+				address,
+			)
 			const seqno: number | null = await (
 				contract.methods.seqno() as contract.MethodCallerRequest
 			).call()
-			const balance = await this.tonweb.getBalance(address)
 
-			this.printAddressInfo(contractAddress)
-			this.logger.info(`Balance: ${this.formatAmount(balance)}`)
+			this.printAddressInfo(contractAddress, addressInfo)
 			this.logger.info(`Sequence number: ${seqno}`)
 		} catch (err: unknown) {
 			this.logger.error(err)

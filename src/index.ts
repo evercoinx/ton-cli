@@ -6,11 +6,9 @@ import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
 
 import Bridge from "./contract/bridge"
-import Example from "./contract/example"
 import createLogger from "./logger"
 import WalletManager from "./manager/wallet"
 import BridgeManager from "./manager/bridge"
-import ExampleManager from "./manager/example"
 
 const schema = joi
 	.object()
@@ -47,7 +45,6 @@ const tonweb = new TonWeb(provider)
 
 const walletContract = "wallet"
 const bridgeContract = "bridge"
-const exampleContract = "example"
 
 const logger = createLogger(envVars.NODE_ENV)
 const wallets = new Wallets(provider)
@@ -57,12 +54,10 @@ const walletManager = new WalletManager(
 	logger,
 )
 const bridgeManager = new BridgeManager(Bridge as any, tonweb, logger)
-const exampleManager = new ExampleManager(Example as any, tonweb, logger)
 
 const contractToManager = {
 	[walletContract]: walletManager,
 	[bridgeContract]: bridgeManager,
-	[exampleContract]: exampleManager,
 }
 
 const createPrepareCommand = (contract: string) => ({
@@ -159,10 +154,6 @@ const createInfoCommand = (contract: string) => ({
 		.command(createPrepareCommand(bridgeContract))
 		.command(createDeployCommand(bridgeContract))
 		.command(createInfoCommand(bridgeContract))
-
-		.command(createPrepareCommand(exampleContract))
-		.command(createDeployCommand(exampleContract))
-		.command(createInfoCommand(exampleContract))
 
 		.strictCommands()
 		.demandCommand(1)
