@@ -1,15 +1,24 @@
 import TonWeb, { contract, utils } from "tonweb"
 import { Logger } from "winston"
 
-import BaseManager from "./base"
+import BaseManager, { ContractType, BaseContract } from "./base"
+
+type BridgeData = [
+	typeof utils.BN,
+	typeof utils.BN,
+	typeof utils.BN,
+	typeof utils.BN,
+	typeof utils.BN,
+]
 
 class BridgeManager extends BaseManager {
 	public constructor(
-		protected Contract: typeof contract.WalletContract,
+		protected Contract: ContractType<BaseContract>,
 		protected tonweb: TonWeb,
 		protected logger: Logger,
+		protected collectorAddress?: string,
 	) {
-		super(Contract, tonweb, logger)
+		super(Contract, tonweb, logger, collectorAddress)
 	}
 
 	public async info(address: string): Promise<void> {
@@ -19,12 +28,13 @@ class BridgeManager extends BaseManager {
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
 				address: contractAddress,
+				collectorAddress: this.collectorAddress,
 			})
 
 			const addressInfo = await this.tonweb.provider.getAddressInfo(
 				address,
 			)
-			const rawBridgeData: [number, string, number] | null = await (
+			const rawBridgeData: BridgeData | null = await (
 				contract.methods.bridgeData() as contract.MethodCallerRequest
 			).call()
 			if (!rawBridgeData) {
@@ -32,11 +42,13 @@ class BridgeManager extends BaseManager {
 				return
 			}
 
-			const [seqno, publicKey, totalLocked] = rawBridgeData
+			const [seqno, publicKey, totalLocked, wc, addr] = rawBridgeData
+
 			this.printAddressInfo(contractAddress, addressInfo)
 			this.logger.info(`Sequence number: ${seqno}`)
 			this.logger.info(`Public key: ${publicKey}`)
 			this.logger.info(`Total locked: ${totalLocked}`)
+			this.logger.info(`Collector address: ${wc}:${addr}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}

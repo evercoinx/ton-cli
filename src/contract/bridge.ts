@@ -1,14 +1,21 @@
 import { boc, Contract, contract, providers, utils } from "tonweb"
 
+export interface BridgeOptions extends contract.Options {
+	collectorAddress: string
+}
+
 class Bridge extends Contract {
+	public collectorAddress: utils.Address
+
 	public constructor(
 		provider: providers.HttpProvider,
-		options: contract.Options,
+		options: BridgeOptions,
 	) {
 		const code = boc.Cell.oneFromBoc(
-			"B5EE9C72410108010063000114FF00F4A413F4BCF2C80B01020120020302014804050244F28308D71820D31FDB3C5243BAF2A104F901541054F910F2A2F800D31F5BA402DB3C06070004D0300109A1A973B679060014ED44D0D31FD3FFFA00D1001802C8CB1FCBFF01FA02C9ED5453758FFE",
+			"B5EE9C7241010801006E000114FF00F4A413F4BCF2C80B0102012002030201480405024AF28308D71820D31FDB3C5254BAF2A105F901541066F910F2A2F80001D31F5B01A45520DB3C06070004D030010DA1A973B679F489060018ED44D0D31FD3FFFA00FA40D1002003C8CB1F12CBFF01FA0201CF16C9ED5476214A89",
 		)
 		super(provider, { ...options, code })
+		this.collectorAddress = new utils.Address(options.collectorAddress)
 
 		this.methods = {
 			bridgeData: this.createCaller("get_bridge_data"),
@@ -47,9 +54,10 @@ class Bridge extends Contract {
 		const cell = new boc.Cell()
 		cell.bits.writeUint(0, 32) // seqno
 		if (this.options.publicKey) {
-			cell.bits.writeBytes(this.options.publicKey)
+			cell.bits.writeBytes(this.options.publicKey) // public_key
 		}
 		cell.bits.writeGrams(0) // total_locked
+		cell.bits.writeAddress(this.collectorAddress) // collector_address
 		return cell
 	}
 

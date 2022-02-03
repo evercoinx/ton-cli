@@ -2,6 +2,7 @@ import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
 import TonWeb, { contract, providers, utils } from "tonweb"
 import { Logger } from "winston"
+import { BridgeOptions } from "../contract/bridge"
 
 interface AddressToMnemonic {
 	[key: string]: string[]
@@ -13,6 +14,14 @@ interface TransactionFees {
 	forwardFee: number
 	storageFee: number
 	totalFee: number
+}
+
+export interface BaseContract extends contract.Contract {
+	deploy(secretKey: Uint8Array): Promise<contract.MethodSenderRequest>
+}
+
+export interface ContractType<T> extends Function {
+	new (provider: providers.HttpProvider, options: Partial<BridgeOptions>): T
 }
 
 /* eslint-disable no-unused-vars */
@@ -30,9 +39,10 @@ abstract class BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(
-		protected Contract: typeof contract.WalletContract,
+		protected Contract: ContractType<BaseContract>,
 		protected tonweb: TonWeb,
 		protected logger: Logger,
+		protected collectorAddress?: string,
 	) {}
 
 	public abstract info(address: string): Promise<void>
@@ -47,6 +57,7 @@ abstract class BaseManager {
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: workchain,
+				collectorAddress: this.collectorAddress,
 			})
 
 			const address = await contract.getAddress()
@@ -86,6 +97,7 @@ abstract class BaseManager {
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: contractAddress.wc,
+				collectorAddress: this.collectorAddress,
 			})
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)

@@ -2,13 +2,13 @@ import TonWeb, { contract, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
 
-import BaseManager, { SendMode } from "./base"
+import BaseManager, { SendMode, ContractType, BaseContract } from "./base"
 
 class WalletManager extends BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
 	public constructor(
-		Contract: typeof contract.WalletContract,
+		protected Contract: ContractType<BaseContract>,
 		protected tonweb: TonWeb,
 		protected logger: Logger,
 	) {

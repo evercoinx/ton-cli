@@ -29,6 +29,7 @@ const schema = joi
 				"v4R2",
 			)
 			.required(),
+		NODE_COLLECTOR_ADDRESS: joi.string().required(),
 	})
 	.unknown()
 
@@ -53,7 +54,12 @@ const walletManager = new WalletManager(
 	tonweb,
 	logger,
 )
-const bridgeManager = new BridgeManager(Bridge as any, tonweb, logger)
+const bridgeManager = new BridgeManager(
+	Bridge as any,
+	tonweb,
+	logger,
+	envVars.NODE_COLLECTOR_ADDRESS,
+)
 
 const contractToManager = {
 	[walletContract]: walletManager,
