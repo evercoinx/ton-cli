@@ -167,10 +167,6 @@ int calculate_fee(int msg_value, (int, int, int) fees)  {
 }
 
 () recv_external(slice in_msg) impure {
-    if (slice_empty?(in_msg)) {
-        return (); 
-    }
-
     slice signature = in_msg~load_bits(512);
 	slice cs = in_msg;
 	(int stored_seqno, int public_key, int total_locked, slice collector_addr, var fees) = load_data();
@@ -179,11 +175,13 @@ int calculate_fee(int msg_value, (int, int, int) fees)  {
     throw_unless(33, seqno == stored_seqno);
     throw_unless(34, check_signature(slice_hash(in_msg), signature, public_key));
 
-    int op = cs~load_uint(7);
-    ifnot (op) { ;; init contract 
+    int op = cs~load_uint(32);
+    ifnot (op) {
+		;; init contract
         accept_message();
 		save_data(seqno + 1, public_key, total_locked, collector_addr, fees);
     } 
+	cs.end_parse();
 }
 
 
