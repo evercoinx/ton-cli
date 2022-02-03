@@ -22,13 +22,23 @@ class BridgeManager extends BaseManager {
 			})
 
 			const balance = await this.tonweb.getBalance(address)
-			const bridgeData: string[] | null = await (
+			const rawBridgeData: [number, string, number] | null = await (
 				contract.methods.bridgeData() as contract.MethodCallerRequest
 			).call()
+			if (!rawBridgeData) {
+				this.printAddressInfo(contractAddress)
+				this.logger.info(`State: uninitialized`)
+				this.logger.info(`Balance: ${this.formatAmount(balance)}`)
+				return
+			}
 
+			const [seqno, publicKey, totalLocked] = rawBridgeData
 			this.printAddressInfo(contractAddress)
+			this.logger.info(`State: active`)
 			this.logger.info(`Balance: ${this.formatAmount(balance)}`)
-			this.logger.info(`Bridge data: ${bridgeData}`)
+			this.logger.info(`Sequence number: ${seqno}`)
+			this.logger.info(`Public key: ${publicKey}`)
+			this.logger.info(`Total locked: ${totalLocked}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
