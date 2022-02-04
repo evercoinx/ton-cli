@@ -1,8 +1,7 @@
 import fs from "fs/promises"
 import tonMnemonic = require("tonweb-mnemonic")
-import TonWeb, { contract, providers, utils } from "tonweb"
+import { providers, utils } from "tonweb"
 import { Logger } from "winston"
-import { BridgeOptions } from "../contract/bridge"
 
 interface AddressToMnemonic {
 	[key: string]: string[]
@@ -16,17 +15,9 @@ interface TransactionFees {
 	totalFee: number
 }
 
-export interface BaseContract extends contract.Contract {
-	deploy(secretKey: Uint8Array): Promise<contract.MethodSenderRequest>
-}
-
-export interface ContractType<T> extends Function {
-	new (provider: providers.HttpProvider, options: Partial<BridgeOptions>): T
-}
-
 /* eslint-disable no-unused-vars */
 export enum SendMode {
-	Ordinary = 0,
+	NoAction = 0,
 	SenderPaysForwardFees = 1,
 	IgnoreErrors = 2,
 	FreezeAccount = 32,
@@ -38,90 +29,13 @@ export enum SendMode {
 abstract class BaseManager {
 	static mnemonicFilename = "mnemonic.json"
 
-	public constructor(
-		protected Contract: ContractType<BaseContract>,
-		protected tonweb: TonWeb,
-		protected logger: Logger,
-		protected collectorAddress?: utils.Address,
-	) {}
+	public constructor(protected logger: Logger) {}
+
+	public abstract prepare(workchain: number): Promise<void>
+
+	public abstract deploy(contractAddress: string): Promise<void>
 
 	public abstract info(contractAddress: string): Promise<void>
-
-	public async prepare(workchain = 0): Promise<void> {
-		try {
-			this.logger.info(`Contract preparation:`)
-
-			const mnemonic = await tonMnemonic.generateMnemonic()
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
-
-			const contract = new this.Contract(this.tonweb.provider, {
-				publicKey: keyPair.publicKey,
-				wc: workchain,
-				collectorAddress: this.collectorAddress,
-			})
-
-			const tonContractAddress = await contract.getAddress()
-			const bounceableAddress = tonContractAddress.toString(
-				true,
-				true,
-				true,
-			)
-			await this.saveMnemonic(bounceableAddress, mnemonic)
-
-			const deployRequest = await contract.deploy(keyPair.secretKey)
-
-			const feeResponse = await deployRequest.estimateFee()
-			this.printFees(feeResponse)
-
-			const nonBounceableAddress = tonContractAddress.toString(
-				true,
-				true,
-				false,
-			)
-			this.logger.info(`Contract is ready to be deployed`)
-			this.logger.info(`Send some TON coin to ${nonBounceableAddress}`)
-		} catch (err: unknown) {
-			this.logger.error(err)
-		}
-	}
-
-	public async deploy(contractAddress: string): Promise<void> {
-		try {
-			this.logger.info(`Contract deployment:`)
-
-			const tonContractAddress = new utils.Address(contractAddress)
-			if (!tonContractAddress.isUserFriendly) {
-				throw new Error(
-					`Contract address should be in user friendly format`,
-				)
-			}
-			if (!tonContractAddress.isBounceable) {
-				throw new Error(`Contract address should be bounceable`)
-			}
-
-			const mnemonic = await this.loadMnemonic(contractAddress)
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
-
-			const contract = new this.Contract(this.tonweb.provider, {
-				publicKey: keyPair.publicKey,
-				wc: tonContractAddress.wc,
-				collectorAddress: this.collectorAddress,
-			})
-
-			const deployRequest = await contract.deploy(keyPair.secretKey)
-
-			const feeResponse = await deployRequest.estimateFee()
-			this.printFees(feeResponse)
-
-			const deployResponse = await deployRequest.send()
-			this.printResponse(
-				deployResponse,
-				`Contract was deployed successfully`,
-			)
-		} catch (err: unknown) {
-			this.logger.error(err)
-		}
-	}
 
 	protected async saveMnemonic(
 		address: string,
@@ -210,7 +124,7 @@ abstract class BaseManager {
 		this.logger.info(`  ${this.formatAmount(totalFee)} - total fee`)
 	}
 
-	private getTransactionFees(fees: providers.SourceFees): TransactionFees {
+	protected getTransactionFees(fees: providers.SourceFees): TransactionFees {
 		const {
 			gas_fee: gasFee,
 			in_fwd_fee: inboundForwardFee,

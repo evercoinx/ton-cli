@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import "dotenv/config"
 import joi from "joi"
-import TonWeb, { HttpProvider, Wallets } from "tonweb"
+import TonWeb, { HttpProvider } from "tonweb"
 import yargs, { Argv } from "yargs"
 import { hideBin } from "yargs/helpers"
 
-import Bridge from "./contract/bridge"
 import createLogger from "./logger"
 import WalletManager from "./manager/wallet"
 import BridgeManager from "./manager/bridge"
@@ -48,14 +47,12 @@ const walletContract = "wallet"
 const bridgeContract = "bridge"
 
 const logger = createLogger(envVars.NODE_ENV)
-const wallets = new Wallets(provider)
 const walletManager = new WalletManager(
-	wallets.all[envVars.NODE_WALLET_VERSION],
 	tonweb,
 	logger,
+	envVars.NODE_WALLET_VERSION,
 )
 const bridgeManager = new BridgeManager(
-	Bridge as any,
 	tonweb,
 	logger,
 	envVars.NODE_COLLECTOR_ADDRESS,

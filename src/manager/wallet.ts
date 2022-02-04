@@ -1,23 +1,100 @@
-import TonWeb, { contract, utils } from "tonweb"
+import TonWeb, { contract, utils, Wallets } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
 
-import BaseManager, { SendMode, ContractType, BaseContract } from "./base"
+import BaseManager, { SendMode } from "./base"
 
 class WalletManager extends BaseManager {
-	static mnemonicFilename = "mnemonic.json"
+	public Contract: typeof contract.WalletContract
 
 	public constructor(
-		protected Contract: ContractType<BaseContract>,
 		protected tonweb: TonWeb,
 		protected logger: Logger,
+		version: string,
 	) {
-		super(Contract, tonweb, logger)
+		super(logger)
+
+		const wallets = new Wallets(tonweb.provider)
+		this.Contract = wallets.all[version]
+	}
+
+	public async prepare(workchain = 0): Promise<void> {
+		try {
+			this.logger.info(`Prepare wallet:`)
+
+			const mnemonic = await tonMnemonic.generateMnemonic()
+			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+
+			const contract = new this.Contract(this.tonweb.provider, {
+				publicKey: keyPair.publicKey,
+				wc: workchain,
+			})
+
+			const tonContractAddress = await contract.getAddress()
+			const bounceableAddress = tonContractAddress.toString(
+				true,
+				true,
+				true,
+			)
+			await this.saveMnemonic(bounceableAddress, mnemonic)
+
+			const deployRequest = await contract.deploy(keyPair.secretKey)
+
+			const feeResponse = await deployRequest.estimateFee()
+			this.printFees(feeResponse)
+
+			const nonBounceableAddress = tonContractAddress.toString(
+				true,
+				true,
+				false,
+			)
+			this.logger.info(`Wallet is ready to be deployed`)
+			this.logger.info(`Send some TON coin to ${nonBounceableAddress}`)
+		} catch (err: unknown) {
+			this.logger.error(err)
+		}
+	}
+
+	public async deploy(contractAddress: string): Promise<void> {
+		try {
+			this.logger.info(`Deploy wallet:`)
+
+			const tonContractAddress = new utils.Address(contractAddress)
+			if (!tonContractAddress.isUserFriendly) {
+				throw new Error(
+					`Contract address should be in user friendly format`,
+				)
+			}
+			if (!tonContractAddress.isBounceable) {
+				throw new Error(`Contract address should be bounceable`)
+			}
+
+			const mnemonic = await this.loadMnemonic(contractAddress)
+			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+
+			const contract = new this.Contract(this.tonweb.provider, {
+				publicKey: keyPair.publicKey,
+				wc: tonContractAddress.wc,
+			})
+
+			const deployRequest = await contract.deploy(keyPair.secretKey)
+
+			const feeResponse = await deployRequest.estimateFee()
+			this.printFees(feeResponse)
+
+			const deployResponse = await deployRequest.send()
+			this.printResponse(
+				deployResponse,
+				`Contract was deployed successfully`,
+			)
+		} catch (err: unknown) {
+			this.logger.error(err)
+		}
 	}
 
 	public async info(address: string): Promise<void> {
 		try {
-			this.logger.info(`Contract information:`)
+			this.logger.info(`Get wallet information:`)
 
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
@@ -46,7 +123,7 @@ class WalletManager extends BaseManager {
 		memo: string,
 	): Promise<void> {
 		try {
-			this.logger.info(`Wallet transfer:`)
+			this.logger.info(`Transfer TON between wallets:`)
 			if (!utils.Address.isValid(sender)) {
 				throw new Error(`Invalid sender address`)
 			}
