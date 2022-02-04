@@ -1,7 +1,7 @@
 import { boc, Contract, contract, providers, utils } from "tonweb"
 
 export interface BridgeOptions extends contract.Options {
-	collectorAddress: string
+	collectorAddress: utils.Address
 }
 
 /* eslint-disable no-unused-vars */
@@ -23,10 +23,40 @@ class Bridge extends Contract {
 			"B5EE9C724101080100D5000114FF00F4A413F4BCF2C80B010201200203020148040502D6F28308D71820D31FDB3C5287BAF2A108F901541094F910F2A2F80004D31F21C00196313403FA40308E3721C0029D31333535FA00FA00D30D5520338E2001C0038E16FA4030708018C8CB0558CF1621FA02CB6AC98306FB009130E25065E2055063E204A45056103402DB3C06070004D0300115A1A973B67807F488AA400906002CED44D0D31FD3FFFA00FA40FA00FA00D30D552003D158004606C8CB1F15CBFF5003FA0201CF16502320812710BCF2D1875AFA0258FA02CB0DC9ED54819D02BE",
 		)
 		super(provider, { ...options, code })
-		this.collectorAddress = new utils.Address(options.collectorAddress)
+		this.collectorAddress = options.collectorAddress
 
 		this.methods = {
 			bridgeData: this.createCaller("get_bridge_data"),
+			changeCollector: (
+				collectorAddress: utils.Address,
+				secretKey: Uint8Array,
+				seqno: number,
+			) =>
+				Contract.createMethod(
+					this.provider,
+					this.createChangeCollectorExternalMessage(
+						collectorAddress,
+						secretKey,
+						seqno,
+					),
+				),
+			changeFees: (
+				flatReward: number,
+				networkFee: number,
+				factor: number,
+				secretKey: Uint8Array,
+				seqno: number,
+			) =>
+				Contract.createMethod(
+					this.provider,
+					this.createChangeFeesExternalMessage(
+						flatReward,
+						networkFee,
+						factor,
+						secretKey,
+						seqno,
+					),
+				),
 		}
 	}
 
@@ -36,21 +66,6 @@ class Bridge extends Contract {
 		return Contract.createMethod(
 			this.provider,
 			this.createInitExternalMessage(secretKey),
-		)
-	}
-
-	public async changeCollector(
-		collectorAddress: utils.Address,
-		secretKey: Uint8Array,
-		seqno: number,
-	): Promise<contract.MethodSenderRequest> {
-		return Contract.createMethod(
-			this.provider,
-			this.createChangeCollectorExternalMessage(
-				collectorAddress,
-				secretKey,
-				seqno,
-			),
 		)
 	}
 
@@ -137,6 +152,24 @@ class Bridge extends Contract {
 			BridgeOperation.ChangeCollector,
 		)
 		signingMessage.bits.writeAddress(collectorAddress)
+
+		return this.createExternalMessage(signingMessage, secretKey, seqno)
+	}
+
+	private async createChangeFeesExternalMessage(
+		flatReward: number,
+		networkFee: number,
+		factor: number,
+		secretKey: Uint8Array,
+		seqno: number,
+	): Promise<contract.ExternalMessage> {
+		const signingMessage = this.createSigningMessage(
+			seqno,
+			BridgeOperation.ChangeFees,
+		)
+		signingMessage.bits.writeGrams(flatReward)
+		signingMessage.bits.writeGrams(networkFee)
+		signingMessage.bits.writeUint(factor, 14)
 
 		return this.createExternalMessage(signingMessage, secretKey, seqno)
 	}

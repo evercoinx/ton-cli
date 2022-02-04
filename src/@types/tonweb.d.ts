@@ -478,7 +478,7 @@ declare module "tonweb" {
 			estimateFee: () => Promise<providers.Fees | providers.Error>
 		}
 
-		export type MethodSender = (params?: object) => MethodSenderRequest
+		export type MethodSender = (...args: any[]) => MethodSenderRequest
 
 		export interface Methods {
 			[methodName: string]: MethodCaller | MethodSender

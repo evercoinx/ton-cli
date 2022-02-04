@@ -161,16 +161,57 @@ const createInfoCommand = (contract: string) => ({
 		.command(createDeployCommand(bridgeContract))
 		.command(createInfoCommand(bridgeContract))
 		.command({
-			command: "changecollector <address>",
+			command: "changecollector <contract> <collector>",
 			aliases: ["bcc"],
 			describe: "Change collector",
 			builder: (yargs: Argv) =>
-				yargs.positional("address", {
-					describe: "Collector address",
-				}),
+				yargs
+					.positional("contract", {
+						describe: "Contract address",
+					})
+					.positional("collector", {
+						describe: "Collector address",
+					}),
 			handler: async (argv: any) => {
-				const { address } = argv
-				await contractToManager[bridgeContract].changeCollector(address)
+				const { contract, collector } = argv
+				await contractToManager[bridgeContract].changeCollector(
+					contract,
+					collector,
+				)
+			},
+		})
+		.command({
+			command: "changefees <contract> [flatreward] [networkfee] [factor]",
+			aliases: ["bcf"],
+			describe: "Change fees",
+			builder: (yargs: Argv) =>
+				yargs
+					.positional("contract", {
+						describe: "Contract address",
+					})
+					.positional("flatreward", {
+						describe: "Flat reward (in TON). Defaults to 0",
+						default: 0,
+					})
+					.coerce("flatreward", (opt: string) => parseFloat(opt))
+					.positional("networkfee", {
+						describe: "Network fee (in TON). Defaults to 0",
+						default: 0,
+					})
+					.coerce("networkfee", (opt: string) => parseFloat(opt))
+					.positional("factor", {
+						describe: "Factor. Defaults to 0",
+						default: 0,
+					})
+					.coerce("factor", (opt: string) => parseInt(opt)),
+			handler: async (argv: any) => {
+				const { contract, flatreward, networkfee, factor } = argv
+				await contractToManager[bridgeContract].changeFees(
+					contract,
+					flatreward,
+					networkfee,
+					factor,
+				)
 			},
 		})
 

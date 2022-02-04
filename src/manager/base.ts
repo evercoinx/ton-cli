@@ -42,10 +42,10 @@ abstract class BaseManager {
 		protected Contract: ContractType<BaseContract>,
 		protected tonweb: TonWeb,
 		protected logger: Logger,
-		protected collectorAddress?: string,
+		protected collectorAddress?: utils.Address,
 	) {}
 
-	public abstract info(address: string): Promise<void>
+	public abstract info(contractAddress: string): Promise<void>
 
 	public async prepare(workchain = 0): Promise<void> {
 		try {
@@ -60,8 +60,12 @@ abstract class BaseManager {
 				collectorAddress: this.collectorAddress,
 			})
 
-			const address = await contract.getAddress()
-			const bounceableAddress = address.toString(true, true, true)
+			const tonContractAddress = await contract.getAddress()
+			const bounceableAddress = tonContractAddress.toString(
+				true,
+				true,
+				true,
+			)
 			await this.saveMnemonic(bounceableAddress, mnemonic)
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
@@ -69,7 +73,11 @@ abstract class BaseManager {
 			const feeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
-			const nonBounceableAddress = address.toString(true, true, false)
+			const nonBounceableAddress = tonContractAddress.toString(
+				true,
+				true,
+				false,
+			)
 			this.logger.info(`Contract is ready to be deployed`)
 			this.logger.info(`Send some TON coin to ${nonBounceableAddress}`)
 		} catch (err: unknown) {
@@ -77,26 +85,26 @@ abstract class BaseManager {
 		}
 	}
 
-	public async deploy(address: string): Promise<void> {
+	public async deploy(contractAddress: string): Promise<void> {
 		try {
 			this.logger.info(`Contract deployment:`)
 
-			const contractAddress = new utils.Address(address)
-			if (!contractAddress.isUserFriendly) {
+			const tonContractAddress = new utils.Address(contractAddress)
+			if (!tonContractAddress.isUserFriendly) {
 				throw new Error(
 					`Contract address should be in user friendly format`,
 				)
 			}
-			if (!contractAddress.isBounceable) {
+			if (!tonContractAddress.isBounceable) {
 				throw new Error(`Contract address should be bounceable`)
 			}
 
-			const mnemonic = await this.loadMnemonic(address)
+			const mnemonic = await this.loadMnemonic(contractAddress)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
-				wc: contractAddress.wc,
+				wc: tonContractAddress.wc,
 				collectorAddress: this.collectorAddress,
 			})
 
