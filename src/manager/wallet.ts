@@ -60,7 +60,7 @@ class WalletManager extends BaseManager {
 
 			if (stateInit && recipientAddress.isBounceable) {
 				throw new Error(
-					`Recipient address should be non-bounceable for state init operation`,
+					`Recipient address should be non-bounceable for state-init operation`,
 				)
 			}
 

@@ -115,16 +115,6 @@ declare module "tonweb" {
 			): void
 		}
 
-		interface CellObjectData {
-			b64: string
-			len: number
-		}
-
-		interface CellObject {
-			data: CellObjectData
-			refs: CellObjectData[]
-		}
-
 		export class Cell {
 			public bits: BitString
 
@@ -153,8 +143,6 @@ declare module "tonweb" {
 			public getRepr(): Promise<Uint8Array>
 
 			public hash(): Promise<Uint8Array>
-
-			public toObject(): CellObject
 
 			public print(indent: string): string
 

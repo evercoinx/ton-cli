@@ -25,7 +25,7 @@
         "dotenv": "14.3.2",
         "joi": "17.6.0",
         "tonweb": "git+https://github.com/toncenter/tonweb.git",
-        "tonweb-mnemonic": "git+https://github.com/toncenter/tonweb-mnemonic.git",
+        "tonweb-mnemonic": "1.0.0",
         "winston": "3.5.1",
         "yargs": "17.3.1"
     },
