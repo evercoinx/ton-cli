@@ -1,7 +1,14 @@
 import { boc, Contract, contract, providers, utils } from "tonweb"
 
+interface BridgeFeeOptions {
+	flatReward: number
+	networkFee: number
+	factor: number
+}
+
 export interface BridgeOptions extends contract.Options {
-	collectorAddress: utils.Address
+	initialCollectorAddress?: utils.Address
+	initialFees?: BridgeFeeOptions
 }
 
 /* eslint-disable no-unused-vars */
@@ -13,7 +20,8 @@ enum BridgeOperation {
 /* eslint-enable no-unused-vars */
 
 class Bridge extends Contract {
-	public collectorAddress: utils.Address
+	public initialCollectorAddress?: utils.Address
+	public initialFees?: BridgeFeeOptions
 
 	public constructor(
 		provider: providers.HttpProvider,
@@ -23,7 +31,9 @@ class Bridge extends Contract {
 			"B5EE9C724101080100D5000114FF00F4A413F4BCF2C80B010201200203020148040502D6F28308D71820D31FDB3C5287BAF2A108F901541094F910F2A2F80004D31F21C00196313403FA40308E3721C0029D31333535FA00FA00D30D5520338E2001C0038E16FA4030708018C8CB0558CF1621FA02CB6AC98306FB009130E25065E2055063E204A45056103402DB3C06070004D0300115A1A973B67807F488AA400906002CED44D0D31FD3FFFA00FA40FA00FA00D30D552003D158004606C8CB1F15CBFF5003FA0201CF16502320812710BCF2D1875AFA0258FA02CB0DC9ED54819D02BE",
 		)
 		super(provider, { ...options, code })
-		this.collectorAddress = options.collectorAddress
+
+		this.initialCollectorAddress = options.initialCollectorAddress
+		this.initialFees = options.initialFees
 
 		this.methods = {
 			bridgeData: this.createCaller("get_bridge_data"),
@@ -110,10 +120,27 @@ class Bridge extends Contract {
 			cell.bits.writeBytes(this.options.publicKey) // public_key
 		}
 		cell.bits.writeGrams(0) // total_locked
-		cell.bits.writeAddress(this.collectorAddress) // collector_address
-		cell.bits.writeGrams(5e9) // flat_reward
-		cell.bits.writeGrams(1e9) // network_fee
-		cell.bits.writeUint(1e4, 14) // factor
+
+		if (!this.initialCollectorAddress) {
+			throw new Error(`Collector address is not initialized`)
+		}
+		cell.bits.writeAddress(this.initialCollectorAddress) // collector_address
+
+		if (!this.initialFees?.flatReward) {
+			throw new Error(`Flat reward is not initialized`)
+		}
+		cell.bits.writeGrams(this.initialFees?.flatReward) // flat_reward
+
+		if (!this.initialFees?.networkFee) {
+			throw new Error(`Network fee is not initialized`)
+		}
+		cell.bits.writeGrams(this.initialFees?.networkFee) // network_fee
+
+		if (!this.initialFees?.factor) {
+			throw new Error(`Fee factor is not initialized`)
+		}
+		cell.bits.writeUint(this.initialFees?.factor, 14) // fee_factor
+
 		return cell
 	}
 

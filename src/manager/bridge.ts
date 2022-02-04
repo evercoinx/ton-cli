@@ -18,9 +18,10 @@ export type BridgeData = [
 
 class BridgeManager extends BaseManager {
 	public constructor(
-		protected tonweb: TonWeb,
+		private tonweb: TonWeb,
 		protected logger: Logger,
-		protected collectorAddress: string,
+		private collectorAddress: string,
+		private fees: [number, number, number],
 	) {
 		super(logger)
 	}
@@ -32,10 +33,18 @@ class BridgeManager extends BaseManager {
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
+			const [flatReward, networkFee, feeFactor] = this.fees
 			const contract = new Bridge(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: workchain,
-				collectorAddress: new utils.Address(this.collectorAddress),
+				initialCollectorAddress: new utils.Address(
+					this.collectorAddress,
+				),
+				initialFees: {
+					flatReward,
+					networkFee,
+					factor: feeFactor,
+				},
 			})
 
 			const tonContractAddress = await contract.getAddress()
@@ -86,10 +95,18 @@ class BridgeManager extends BaseManager {
 			const mnemonic = await this.loadMnemonic(contractAddress)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
+			const [flatReward, networkFee, feeFactor] = this.fees
 			const contract = new Bridge(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: tonContractAddress.wc,
-				collectorAddress: new utils.Address(this.collectorAddress),
+				initialCollectorAddress: new utils.Address(
+					this.collectorAddress,
+				),
+				initialFees: {
+					flatReward,
+					networkFee,
+					factor: feeFactor,
+				},
 			})
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
@@ -114,7 +131,6 @@ class BridgeManager extends BaseManager {
 			const tonContractAddress = new utils.Address(contractAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: contractAddress,
-				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const addressInfo = await this.tonweb.provider.getAddressInfo(
@@ -167,7 +183,6 @@ class BridgeManager extends BaseManager {
 			const tonContractAddress = new utils.Address(contractAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: tonContractAddress,
-				collectorAddress: tonCollectorAddress,
 			})
 
 			const mnemonic = await this.loadMnemonic(contractAddress)
@@ -212,7 +227,6 @@ class BridgeManager extends BaseManager {
 			const tonContractAddress = new utils.Address(contractAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: tonContractAddress,
-				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const mnemonic = await this.loadMnemonic(contractAddress)
@@ -262,7 +276,6 @@ class BridgeManager extends BaseManager {
 			const tonContractAddress = new utils.Address(contractAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: tonContractAddress,
-				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const mnemonic = await this.loadMnemonic(contractAddress)

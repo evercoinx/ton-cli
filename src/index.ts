@@ -29,6 +29,14 @@ const schema = joi
 			)
 			.required(),
 		NODE_COLLECTOR_ADDRESS: joi.string().required(),
+		NODE_FLAT_REWARD: joi.number().positive().precision(9).required(),
+		NODE_NETWORK_FEE: joi.number().positive().precision(9).required(),
+		NODE_FEE_FACTOR: joi
+			.number()
+			.positive()
+			.precision(0)
+			.max(10000)
+			.required(),
 	})
 	.unknown()
 
@@ -56,6 +64,11 @@ const bridgeManager = new BridgeManager(
 	tonweb,
 	logger,
 	envVars.NODE_COLLECTOR_ADDRESS,
+	[
+		envVars.NODE_FLAT_REWARD,
+		envVars.NODE_NETWORK_FEE,
+		envVars.NODE_FEE_FACTOR,
+	],
 )
 
 const contractToManager = {

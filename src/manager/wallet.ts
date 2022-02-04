@@ -8,9 +8,9 @@ class WalletManager extends BaseManager {
 	public Contract: typeof contract.WalletContract
 
 	public constructor(
-		protected tonweb: TonWeb,
+		private tonweb: TonWeb,
 		protected logger: Logger,
-		version: string,
+		private version: string,
 	) {
 		super(logger)
 
