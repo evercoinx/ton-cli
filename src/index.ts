@@ -147,7 +147,7 @@ const createInfoCommand = (contract: string) => ({
 					}),
 			handler: async (argv: any) => {
 				const { sender, recipient, amount, stateinit, memo } = argv
-				await walletManager.transfer(
+				await contractToManager[walletContract].transfer(
 					sender,
 					recipient,
 					amount,
@@ -160,6 +160,19 @@ const createInfoCommand = (contract: string) => ({
 		.command(createPrepareCommand(bridgeContract))
 		.command(createDeployCommand(bridgeContract))
 		.command(createInfoCommand(bridgeContract))
+		.command({
+			command: "changecollector <address>",
+			aliases: ["bcc"],
+			describe: "Change collector",
+			builder: (yargs: Argv) =>
+				yargs.positional("address", {
+					describe: "Collector address",
+				}),
+			handler: async (argv: any) => {
+				const { address } = argv
+				await contractToManager[bridgeContract].changeCollector(address)
+			},
+		})
 
 		.strictCommands()
 		.demandCommand(1)

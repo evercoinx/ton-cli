@@ -52,8 +52,25 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 	accept_message(); ;; message is signed by owner
 
 	int op = cs~load_uint(32);
-    ifnot (op) {
-		;; init contract
+	if (op == 1) { ;; change collector
+		collector_addr = cs~load_msg_addr();
+	}
+	elseif (op == 2) { ;; change fees
+		fees = cs~load_fees();
+	}
+	elseif (op == 3) { ;; get reward
+		;; reserve total_locked + 100 Toncoins for storage fees
+		;; raw_reserve(total_locked + 100000000000, 2);
+
+		slice s_addr = cs~load_msg_addr();
+
+		;; #int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddressInt = 0 1 1 0 00
+		var msg = begin_cell()
+			.store_uint(0x18, 6)
+			.store_slice(s_addr)
+			.store_grams(0)
+			.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1);
+		send_raw_message(msg.end_cell(), 128); ;; send all the remainings
 	}
 
 	save_data(seqno + 1, public_key, total_locked, collector_addr, fees);

@@ -545,7 +545,7 @@ declare module "tonweb" {
 			public static createMethod(
 				provider: providers.HttpProvider,
 				queryPromise: Promise<InitExternalMessage | ExternalMessage>,
-			): MethodSender
+			): MethodSenderRequest
 		}
 
 		class WalletContract extends Contract {

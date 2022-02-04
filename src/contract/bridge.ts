@@ -4,6 +4,14 @@ export interface BridgeOptions extends contract.Options {
 	collectorAddress: string
 }
 
+/* eslint-disable no-unused-vars */
+enum BridgeOperation {
+	ChangeCollector = 1,
+	ChangeFees = 2,
+	GetReward = 3,
+}
+/* eslint-enable no-unused-vars */
+
 class Bridge extends Contract {
 	public collectorAddress: utils.Address
 
@@ -12,7 +20,7 @@ class Bridge extends Contract {
 		options: BridgeOptions,
 	) {
 		const code = boc.Cell.oneFromBoc(
-			"B5EE9C7241010801008F000114FF00F4A413F4BCF2C80B0102012002030201480405024AF28308D71820D31FDB3C5287BAF2A108F901541094F910F2A2F80004D31F5B04A44656DB3C06070004D0300115A1A973B67807F488AA400906002CED44D0D31FD3FFFA00FA40FA00FA00D30D552003D158004606C8CB1F15CBFF5003FA0201CF16502320812710BCF2D1875AFA0258FA02CB0DC9ED54E318EE44",
+			"B5EE9C724101080100D5000114FF00F4A413F4BCF2C80B010201200203020148040502D6F28308D71820D31FDB3C5287BAF2A108F901541094F910F2A2F80004D31F21C00196313403FA40308E3721C0029D31333535FA00FA00D30D5520338E2001C0038E16FA4030708018C8CB0558CF1621FA02CB6AC98306FB009130E25065E2055063E204A45056103402DB3C06070004D0300115A1A973B67807F488AA400906002CED44D0D31FD3FFFA00FA40FA00FA00D30D552003D158004606C8CB1F15CBFF5003FA0201CF16502320812710BCF2D1875AFA0258FA02CB0DC9ED54819D02BE",
 		)
 		super(provider, { ...options, code })
 		this.collectorAddress = new utils.Address(options.collectorAddress)
@@ -22,10 +30,27 @@ class Bridge extends Contract {
 		}
 	}
 
-	public async deploy(secretKey: Uint8Array): Promise<contract.MethodSender> {
+	public async deploy(
+		secretKey: Uint8Array,
+	): Promise<contract.MethodSenderRequest> {
 		return Contract.createMethod(
 			this.provider,
 			this.createInitExternalMessage(secretKey),
+		)
+	}
+
+	public async changeCollector(
+		collectorAddress: utils.Address,
+		secretKey: Uint8Array,
+		seqno: number,
+	): Promise<contract.MethodSenderRequest> {
+		return Contract.createMethod(
+			this.provider,
+			this.createChangeCollectorExternalMessage(
+				collectorAddress,
+				secretKey,
+				seqno,
+			),
 		)
 	}
 
@@ -100,6 +125,20 @@ class Bridge extends Contract {
 			code,
 			data,
 		}
+	}
+
+	private async createChangeCollectorExternalMessage(
+		collectorAddress: utils.Address,
+		secretKey: Uint8Array,
+		seqno: number,
+	): Promise<contract.ExternalMessage> {
+		const signingMessage = this.createSigningMessage(
+			seqno,
+			BridgeOperation.ChangeCollector,
+		)
+		signingMessage.bits.writeAddress(collectorAddress)
+
+		return this.createExternalMessage(signingMessage, secretKey, seqno)
 	}
 
 	private async createExternalMessage(
