@@ -58,7 +58,7 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 	elseif (op == 2) { ;; change fees
 		fees = cs~load_fees();
 	}
-	elseif (op == 3) { ;; get reward
+	elseif (op == 3) { ;; withdraw reward
 		;; reserve total_locked + 100 Toncoins for storage fees
 		;; raw_reserve(total_locked + 100000000000, 2);
 

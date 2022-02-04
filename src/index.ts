@@ -211,6 +211,26 @@ const createInfoCommand = (contract: string) => ({
 				)
 			},
 		})
+		.command({
+			command: "withdrawreward <contract> <beneficiary>",
+			aliases: ["bwr"],
+			describe: "Withdraw reward",
+			builder: (yargs: Argv) =>
+				yargs
+					.positional("contract", {
+						describe: "Contract address",
+					})
+					.positional("beneficiary", {
+						describe: "Beneficiary address",
+					}),
+			handler: async (argv: any) => {
+				const { contract, beneficiary } = argv
+				await contractToManager[bridgeContract].withdrawReward(
+					contract,
+					beneficiary,
+				)
+			},
+		})
 
 		.strictCommands()
 		.demandCommand(1)

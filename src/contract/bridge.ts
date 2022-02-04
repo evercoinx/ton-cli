@@ -8,7 +8,7 @@ export interface BridgeOptions extends contract.Options {
 enum BridgeOperation {
 	ChangeCollector = 1,
 	ChangeFees = 2,
-	GetReward = 3,
+	WithdrawReward = 3,
 }
 /* eslint-enable no-unused-vars */
 
@@ -53,6 +53,19 @@ class Bridge extends Contract {
 						flatReward,
 						networkFee,
 						factor,
+						secretKey,
+						seqno,
+					),
+				),
+			withdrawReward: (
+				beneficiaryAddress: utils.Address,
+				secretKey: Uint8Array,
+				seqno: number,
+			) =>
+				Contract.createMethod(
+					this.provider,
+					this.createWithdrawRewardExternalMessage(
+						beneficiaryAddress,
 						secretKey,
 						seqno,
 					),
@@ -170,6 +183,20 @@ class Bridge extends Contract {
 		signingMessage.bits.writeGrams(flatReward)
 		signingMessage.bits.writeGrams(networkFee)
 		signingMessage.bits.writeUint(factor, 14)
+
+		return this.createExternalMessage(signingMessage, secretKey, seqno)
+	}
+
+	private async createWithdrawRewardExternalMessage(
+		beneficiaryAddress: utils.Address,
+		secretKey: Uint8Array,
+		seqno: number,
+	): Promise<contract.ExternalMessage> {
+		const signingMessage = this.createSigningMessage(
+			seqno,
+			BridgeOperation.WithdrawReward,
+		)
+		signingMessage.bits.writeAddress(beneficiaryAddress)
 
 		return this.createExternalMessage(signingMessage, secretKey, seqno)
 	}

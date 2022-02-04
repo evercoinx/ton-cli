@@ -20,7 +20,7 @@ class BridgeManager extends BaseManager {
 	public constructor(
 		protected tonweb: TonWeb,
 		protected logger: Logger,
-		protected collectorAddress: utils.Address,
+		protected collectorAddress: string,
 	) {
 		super(logger)
 	}
@@ -35,7 +35,7 @@ class BridgeManager extends BaseManager {
 			const contract = new Bridge(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: workchain,
-				collectorAddress: this.collectorAddress,
+				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const tonContractAddress = await contract.getAddress()
@@ -89,7 +89,7 @@ class BridgeManager extends BaseManager {
 			const contract = new Bridge(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
 				wc: tonContractAddress.wc,
-				collectorAddress: this.collectorAddress,
+				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
@@ -154,13 +154,17 @@ class BridgeManager extends BaseManager {
 
 	public async changeCollector(
 		contractAddress: string,
-		collectorAddress: string,
+		newCollectorAddress: string,
 	): Promise<void> {
 		try {
 			this.logger.info(`Change bridge collector:`)
 
+			const tonCollectorAddress = new utils.Address(newCollectorAddress)
+			if (!utils.Address.isValid(tonCollectorAddress)) {
+				throw new Error(`Invalid collector address`)
+			}
+
 			const tonContractAddress = new utils.Address(contractAddress)
-			const tonCollectorAddress = new utils.Address(collectorAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: tonContractAddress,
 				collectorAddress: tonCollectorAddress,
@@ -206,10 +210,9 @@ class BridgeManager extends BaseManager {
 			this.logger.info(`Change bridge fees:`)
 
 			const tonContractAddress = new utils.Address(contractAddress)
-			const tonCollectorAddress = new utils.Address(this.collectorAddress)
 			const contract = new Bridge(this.tonweb.provider, {
 				address: tonContractAddress,
-				collectorAddress: tonCollectorAddress,
+				collectorAddress: new utils.Address(this.collectorAddress),
 			})
 
 			const mnemonic = await this.loadMnemonic(contractAddress)
@@ -238,6 +241,54 @@ class BridgeManager extends BaseManager {
 			this.printResponse(
 				changeCollectorResponse,
 				`Bridge fees changed successfully`,
+			)
+		} catch (err: unknown) {
+			this.logger.error(err)
+		}
+	}
+
+	public async withdrawReward(
+		contractAddress: string,
+		beneficiaryAddress: string,
+	): Promise<void> {
+		try {
+			this.logger.info(`Withdraw bridge reward:`)
+
+			const tonBeneficiaryAddress = new utils.Address(beneficiaryAddress)
+			if (!utils.Address.isValid(tonBeneficiaryAddress)) {
+				throw new Error(`Invalid beneficiary address`)
+			}
+
+			const tonContractAddress = new utils.Address(contractAddress)
+			const contract = new Bridge(this.tonweb.provider, {
+				address: tonContractAddress,
+				collectorAddress: new utils.Address(this.collectorAddress),
+			})
+
+			const mnemonic = await this.loadMnemonic(contractAddress)
+			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+
+			const bridgeData: BridgeData | null = await (
+				contract.methods.bridgeData() as contract.MethodCallerRequest
+			).call()
+			if (!bridgeData) {
+				throw new Error(`Unable to get bridge data`)
+			}
+
+			const [seqno] = bridgeData
+			const withdrawRewardRequest = contract.methods.withdrawReward(
+				tonBeneficiaryAddress,
+				keyPair.secretKey,
+				seqno,
+			) as contract.MethodSenderRequest
+
+			const feeResponse = await withdrawRewardRequest.estimateFee()
+			this.printFees(feeResponse)
+
+			const changeCollectorResponse = await withdrawRewardRequest.send()
+			this.printResponse(
+				changeCollectorResponse,
+				`Bridge reward was withdrawn successfully`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)
