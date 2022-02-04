@@ -1,21 +1,37 @@
-(int, int, int, slice) load_data() inline_ref {
+(slice, (int, int, int)) load_fees(slice s) inline {
+    var fees = (s~load_grams(), s~load_grams(), s~load_uint(14));
+    return (s, fees);
+}
+
+(int, int, int, slice, (int, int, int)) load_data() inline_ref {
 	var ds = get_data().begin_parse();
 	var res = (
 		ds~load_uint(32),
 		ds~load_uint(256),
 		ds~load_grams(),
-		ds~load_msg_addr()
+		ds~load_msg_addr(),
+		ds~load_fees()
 	);
 	ds.end_parse();
 	return res;
 }
 
-() save_data(int seqno, int public_key, int total_locked, slice collector_addr) impure inline_ref {
+builder store_fees(builder b, (int, int, int) fees) inline {
+	var (flat_reward, network_fee, factor) = fees;
+	throw_if(391, factor > 10000);
+
+	return b.store_grams(flat_reward)
+		.store_grams(network_fee)
+		.store_uint(factor, 14);
+}
+
+() save_data(int seqno, int public_key, int total_locked, slice collector_addr, (int, int, int) fees) impure inline_ref {
 	var st = begin_cell()
 		.store_uint(seqno, 32)
 		.store_uint(public_key, 256)
 		.store_grams(total_locked)
 		.store_slice(collector_addr)
+		.store_fees(fees)
 		.end_cell();
 	set_data(st);
 }
@@ -29,7 +45,7 @@
 	var cs = in_msg;
 	int seqno = cs~load_uint(32);
 
-	(int stored_seqno, int public_key, int total_locked, slice collector_addr) = load_data();
+	var (stored_seqno, public_key, total_locked, collector_addr, fees) = load_data();
 	throw_unless(33, seqno == stored_seqno);
 	throw_unless(34, check_signature(slice_hash(in_msg), signature, public_key));
 
@@ -40,13 +56,14 @@
 		;; init contract
 	}
 
-	save_data(seqno + 1, public_key, total_locked, collector_addr);
+	save_data(seqno + 1, public_key, total_locked, collector_addr, fees);
 }
 
 ;; Get methods
 
 _ get_bridge_data() method_id {
-    var (seqno, public_key, total_locked, collector_addr) = load_data();
+    var (seqno, public_key, total_locked, collector_addr, fees) = load_data();
+	var (flat_reward, network_fee, factor) = fees;
 	var (wc, addr) = parse_std_addr(collector_addr);
-    return (seqno, public_key, total_locked, wc, addr);
+    return (seqno, public_key, total_locked, wc, addr, flat_reward, network_fee, factor);
 }

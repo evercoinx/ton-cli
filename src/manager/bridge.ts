@@ -9,6 +9,9 @@ type BridgeData = [
 	typeof utils.BN,
 	typeof utils.BN,
 	typeof utils.BN,
+	typeof utils.BN,
+	typeof utils.BN,
+	typeof utils.BN,
 ]
 
 class BridgeManager extends BaseManager {
@@ -42,13 +45,25 @@ class BridgeManager extends BaseManager {
 				return
 			}
 
-			const [seqno, publicKey, totalLocked, wc, addr] = rawBridgeData
+			const [
+				seqno,
+				publicKey,
+				totalLocked,
+				wc,
+				addr,
+				flatReward,
+				networkFee,
+				factor,
+			] = rawBridgeData
 
 			this.printAddressInfo(contractAddress, addressInfo)
 			this.logger.info(`Sequence number: ${seqno}`)
 			this.logger.info(`Public key: ${publicKey}`)
 			this.logger.info(`Total locked: ${totalLocked}`)
 			this.logger.info(`Collector address: ${wc}:${addr}`)
+			this.logger.info(`Flat reward: ${flatReward}`)
+			this.logger.info(`Network fee: ${networkFee}`)
+			this.logger.info(`Factor: ${factor}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
