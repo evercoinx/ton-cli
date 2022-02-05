@@ -41,8 +41,8 @@ class BridgeManager extends BaseManager {
 					this.collectorAddress,
 				),
 				initialFees: {
-					flatReward,
-					networkFee,
+					flatReward: utils.toNano(flatReward),
+					networkFee: utils.toNano(networkFee),
 					factor: feeFactor,
 				},
 			})
@@ -70,7 +70,9 @@ class BridgeManager extends BaseManager {
 			if (feeResponse["@type"] === "query.fees") {
 				const fees = this.getTransactionFees(feeResponse.source_fees)
 				this.logger.info(
-					`Send at least ${fees.totalFee} TON to ${nonBounceableAddress}`,
+					`Send at least ${this.formatAmount(
+						fees.totalFee,
+					)} to ${nonBounceableAddress}`,
 				)
 			}
 		} catch (err: unknown) {

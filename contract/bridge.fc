@@ -36,8 +36,151 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 	set_data(st);
 }
 
-() recv_internal(slice in_msg) impure {
-  ;; do nothing for internal messages
+() send_receipt_message(slice addr, int ans_tag, int query_id, int body, int grams, int mode) impure inline_ref {
+	;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddressInt = 0 1 1 0 00
+	var msg = begin_cell()
+		.store_uint(0x18, 6)
+		.store_slice(addr)
+		.store_grams(grams)
+		.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+		.store_uint(ans_tag, 32)
+		.store_uint(query_id, 64);
+	if (body >= 0) {
+		msg~store_uint(body, 32);
+	}
+	send_raw_message(msg.end_cell(), mode);
+}
+
+() send_text_receipt_message(slice addr, int grams, int mode) impure inline_ref {
+	;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddressInt = 0 1 1 0 00
+	var msg = begin_cell()
+		.store_uint(0x18, 6)
+		.store_slice(addr)
+		.store_grams(grams)
+		.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+		.store_uint(0, 32)
+		.store_uint(0x4f4b, 16); ;; "OK"
+	send_raw_message(msg.end_cell(), mode);
+}
+
+() emit_log_message(int event_id, slice data) impure inline {
+	var msg = begin_cell()
+		.store_uint (12, 4) ;; ext_out_msg_info$11 src:MsgAddressInt ()
+		.store_uint (1, 2)
+		.store_uint (256, 9)
+		.store_uint(event_id, 256)
+		.store_uint(0, 64 + 32 + 2) ;; created_lt, created_at, init:Maybe, body:Either
+		.store_slice(data);
+	send_raw_message(msg.end_cell(), 0);
+}
+
+(slice, (int)) ~load_hex_symbol(slice comment) {
+	int n = comment~load_uint(8);
+	n = n - 48;
+	throw_unless(329, n >= 0);
+	if (n < 10) {
+		return (comment, (n));
+	}
+
+	n = n - 7;
+	throw_unless(329, n >= 0);
+	if (n < 16) {
+		return (comment, (n));
+	}
+
+	n = n - 32;
+	throw_unless(329, (n >= 0) & (n < 16));
+	return (comment, (n));
+}
+
+(slice, (int)) ~load_text_hex_number(slice comment, int byte_length) {
+	throw_unless(329, comment~load_uint(16) == 12408); ;; "0x"
+
+	int current_slice_length = comment.slice_bits() / 8;
+	int result = 0;
+	int counter = 0;
+
+	repeat (2 * byte_length) {
+		result = result * 16 + comment~load_hex_symbol();
+		counter = counter + 1;
+		if (counter == current_slice_length) {
+			if (comment.slice_refs() == 1) {
+				cell _cont = comment~load_ref();
+				comment = _cont.begin_parse();
+				current_slice_length = comment.slice_bits() / 8;
+				counter = 0;
+			}
+		}
+	}
+
+	return (comment, (result));
+}
+
+int calculate_fee(int msg_value, (int, int, int) fees)  {
+    var (flat_reward, network_fee, factor) = fees;
+    var remain = msg_value - flat_reward - network_fee;
+    throw_unless(400, remain > 0);
+
+    int percent_fee = remain * factor / 10000;
+    return flat_reward + network_fee + percent_fee;
+}
+
+() create_swap_from_ton(int dest_addr, int amount, slice s_addr, int query_id) impure {
+    var (seqno, public_key, total_locked, collector_addr, fees) = load_data();
+    var fee = calculate_fee(amount, fees);
+    amount -= fee;
+    throw_unless(306, amount > 0);
+
+	total_locked += amount;
+	var log_data = begin_cell()
+		.store_uint(dest_addr, 160)
+		.store_uint(amount, 64)
+		.end_cell();
+    emit_log_message(0xc0470ccf, log_data.begin_parse());
+
+    save_data(seqno, public_key, total_locked, collector_addr, fees);
+	return send_text_receipt_message(s_addr, 100000000, 3);
+}
+
+() process_simple_transfer (slice in_msg, int msg_value, slice s_addr) impure {
+    if (in_msg.slice_empty?() & (in_msg.slice_refs() == 1)) {
+      cell _cont = in_msg~load_ref();
+      in_msg = _cont.begin_parse();
+    }
+
+    int cmd = in_msg~load_uint(56);
+    throw_unless(328, cmd == 32500882701840163); ;; "swapTo#", other commands are not supported
+
+    int dest_addr = in_msg~load_text_hex_number(20);
+    in_msg.end_parse();
+    return create_swap_from_ton(dest_addr, msg_value, s_addr, 0);
+}
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+	slice cs = in_msg_cell.begin_parse();
+	int flags = cs~load_uint(4); ;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
+	if (flags & 1) {
+		;; ignore all bounced messages
+		return ();
+	}
+
+	slice s_addr = cs~load_msg_addr();
+	throw_if(299, in_msg.slice_empty?()); ;; inbound message has empty body
+
+	int op = in_msg~load_uint(32);
+	ifnot (op) { 
+		;; simple transfer with comment
+		return process_simple_transfer(in_msg, msg_value, s_addr);
+	}
+
+	int query_id = in_msg~load_uint(64);
+	ifnot (op & (1 << 31)) {
+		;; unknown query, return error
+		return send_receipt_message(s_addr, 0xffffffff, query_id, op, 0, 64);
+	}
+
+	;; unknown answer, ignore
+	return ();
 }
 
 () recv_external(slice in_msg) impure {
@@ -63,14 +206,7 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 		;; raw_reserve(total_locked + 100000000000, 2);
 
 		slice s_addr = cs~load_msg_addr();
-
-		;; #int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddressInt = 0 1 1 0 00
-		var msg = begin_cell()
-			.store_uint(0x18, 6)
-			.store_slice(s_addr)
-			.store_grams(0)
-			.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1);
-		send_raw_message(msg.end_cell(), 128); ;; send all the remainings
+		send_receipt_message(s_addr, 0, 0, -1, 0, 128); ;; send all the remainings
 	}
 
 	save_data(seqno + 1, public_key, total_locked, collector_addr, fees);

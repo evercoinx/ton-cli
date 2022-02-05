@@ -10,7 +10,7 @@ interface AddressToMnemonic {
 interface TransactionFees {
 	gasFee: number
 	inboundForwardFee: number
-	forwardFee: number
+	outboundForwardFee: number
 	storageFee: number
 	totalFee: number
 }
@@ -112,14 +112,21 @@ abstract class BaseManager {
 			)
 		}
 
-		const { gasFee, inboundForwardFee, forwardFee, storageFee, totalFee } =
-			this.getTransactionFees(response.source_fees)
+		const {
+			gasFee,
+			inboundForwardFee,
+			outboundForwardFee,
+			storageFee,
+			totalFee,
+		} = this.getTransactionFees(response.source_fees)
 		this.logger.info(`Estimated fees:`)
 		this.logger.info(`  ${this.formatAmount(gasFee)} - gas fee`)
 		this.logger.info(
 			`  ${this.formatAmount(inboundForwardFee)} - inbound forward fee`,
 		)
-		this.logger.info(`  ${this.formatAmount(forwardFee)} - forward fee`)
+		this.logger.info(
+			`  ${this.formatAmount(outboundForwardFee)} - outbound forward fee`,
+		)
 		this.logger.info(`  ${this.formatAmount(storageFee)} - storage fee`)
 		this.logger.info(`  ${this.formatAmount(totalFee)} - total fee`)
 	}
@@ -128,15 +135,16 @@ abstract class BaseManager {
 		const {
 			gas_fee: gasFee,
 			in_fwd_fee: inboundForwardFee,
-			fwd_fee: forwardFee,
+			fwd_fee: outboundForwardFee,
 			storage_fee: storageFee,
 		} = fees
 		return {
 			gasFee,
 			inboundForwardFee,
-			forwardFee,
+			outboundForwardFee,
 			storageFee,
-			totalFee: gasFee + inboundForwardFee + forwardFee + storageFee,
+			totalFee:
+				gasFee + inboundForwardFee + outboundForwardFee + storageFee,
 		}
 	}
 

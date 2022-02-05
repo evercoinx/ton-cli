@@ -210,8 +210,8 @@ const createInfoCommand = (contract: string) => ({
 					})
 					.coerce("networkfee", (opt: string) => parseFloat(opt))
 					.positional("factor", {
-						describe: "Factor. Defaults to 0",
-						default: 0,
+						describe: "Factor. Defaults to 10000",
+						default: 10000,
 					})
 					.coerce("factor", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
