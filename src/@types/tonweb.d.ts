@@ -161,8 +161,6 @@ declare module "tonweb" {
 	}
 
 	declare namespace providers {
-		type AccountState = "uninitialized" | "active" | "frozen"
-
 		export interface Error {
 			"@type": "error"
 			code: number
@@ -210,6 +208,8 @@ declare module "tonweb" {
 			revision: number
 			"@extra": string
 		}
+
+		type AccountState = "uninitialized" | "active" | "frozen"
 
 		interface AddressInfo {
 			"@type": "raw.fullAccountState"
@@ -421,19 +421,23 @@ declare module "tonweb" {
 
 		interface Options {
 			startMcBlockNumber?: number
-			mcInterval?: number
-			shardsInterval?: number
+			mcInterval? = 1000 // ms
+			shardsInterval? = 1000 // ms
+		}
+
+		type BlockHandlerParams = {
+			blockHeader: providers.BlockHeader
 		}
 
 		export class BlockSubscription {
 			public startMcBlockNumber: Pick<Options, "startMcBlockNumber">
-			public mcInterval?: Pick<Options, "mcInterval">
-			public shardsInterval?: Pick<Options, "shardsInterval">
+			public mcInterval: Pick<Options, "mcInterval">
+			public shardsInterval: Pick<Options, "shardsInterval">
 
 			public constructor(
 				public provider: providers.HttpProvider,
 				public storage: InMemoryBlockStorage,
-				public onBlock: ({ blockHeader: BlockHeader }) => Promise<void>,
+				public onBlock: (params: BlockHandlerParams) => Promise<void>,
 				public options: Options,
 			)
 
