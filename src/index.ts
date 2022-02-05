@@ -28,14 +28,9 @@ const schema = joi
 			)
 			.required(),
 		NODE_COLLECTOR_ADDRESS: joi.string().required(),
-		NODE_FLAT_REWARD: joi.number().positive().precision(9).required(),
-		NODE_NETWORK_FEE: joi.number().positive().precision(9).required(),
-		NODE_FEE_FACTOR: joi
-			.number()
-			.positive()
-			.precision(0)
-			.max(10000)
-			.required(),
+		NODE_FLAT_REWARD: joi.number().precision(9).max(1000).required(),
+		NODE_NETWORK_FEE: joi.number().precision(9).max(1000).required(),
+		NODE_FEE_FACTOR: joi.number().precision(0).max(10000).required(),
 	})
 	.unknown()
 
@@ -209,8 +204,8 @@ const createInfoCommand = (contract: string) => ({
 					})
 					.coerce("networkfee", (opt: string) => parseFloat(opt))
 					.positional("factor", {
-						describe: "Factor. Defaults to 10000",
-						default: 10000,
+						describe: "Factor. Defaults to 100",
+						default: 100,
 					})
 					.coerce("factor", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {

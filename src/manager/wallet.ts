@@ -95,7 +95,7 @@ class WalletManager extends BaseManager {
 			const deployResponse = await deployRequest.send()
 			this.printResponse(
 				deployResponse,
-				`Contract was deployed successfully`,
+				`Wallet was deployed successfully`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)
@@ -115,12 +115,16 @@ class WalletManager extends BaseManager {
 			const addressInfo = await this.tonweb.provider.getAddressInfo(
 				address,
 			)
-			const seqno: number | null = await (
-				contract.methods.seqno() as contract.MethodCallerRequest
+			const seqno = await (
+				contract.methods.seqno() as contract.MethodCallerRequest<
+					typeof utils.BN
+				>
 			).call()
 
 			this.printAddressInfo(contractAddress, addressInfo)
-			this.logger.info(`Sequence number: ${seqno}`)
+			if (seqno != null) {
+				this.logger.info(`Sequence number: ${seqno}`)
+			}
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
@@ -179,13 +183,13 @@ class WalletManager extends BaseManager {
 				)
 			}
 
-			const seqno: number | null = await (
-				contract.methods.seqno() as contract.MethodCallerRequest
+			const seqno = await (
+				contract.methods.seqno() as contract.MethodCallerRequest<
+					typeof utils.BN
+				>
 			).call()
 			if (seqno == null) {
-				throw new Error(
-					`Wallet sequence number is undefined. Probably wallet is uninitialized`,
-				)
+				throw new Error(`Wallet sequence number is undefined`)
 			}
 
 			const transferRequest = contract.methods.transfer({

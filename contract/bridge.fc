@@ -36,14 +36,14 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 	set_data(st);
 }
 
-() send_receipt_message(slice addr, int ans_tag, int query_id, int body, int grams, int mode) impure inline_ref {
+() send_receipt_message(slice addr, int op, int query_id, int body, int grams, int mode) impure inline_ref {
 	;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddressInt = 0 1 1 0 00
 	var msg = begin_cell()
 		.store_uint(0x18, 6)
 		.store_slice(addr)
 		.store_grams(grams)
 		.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-		.store_uint(ans_tag, 32)
+		.store_uint(op, 32)
 		.store_uint(query_id, 64);
 	if (body >= 0) {
 		msg~store_uint(body, 32);
@@ -143,11 +143,6 @@ int calculate_fee(int msg_value, (int, int, int) fees)  {
 }
 
 () process_simple_transfer (slice in_msg, int msg_value, slice s_addr) impure {
-    if (in_msg.slice_empty?() & (in_msg.slice_refs() == 1)) {
-      cell _cont = in_msg~load_ref();
-      in_msg = _cont.begin_parse();
-    }
-
     int cmd = in_msg~load_uint(56);
     throw_unless(328, cmd == 32500882701840163); ;; "swapTo#", other commands are not supported
 
@@ -160,12 +155,15 @@ int calculate_fee(int msg_value, (int, int, int) fees)  {
 	slice cs = in_msg_cell.begin_parse();
 	int flags = cs~load_uint(4); ;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
 	if (flags & 1) {
-		;; ignore all bounced messages
+		;; bounced message
 		return ();
 	}
 
 	slice s_addr = cs~load_msg_addr();
-	throw_if(299, in_msg.slice_empty?()); ;; inbound message has empty body
+	if (in_msg.slice_bits() < 32) {
+		;; simple transfer or short
+		return();
+	}
 
 	int op = in_msg~load_uint(32);
 	ifnot (op) { 
@@ -175,11 +173,10 @@ int calculate_fee(int msg_value, (int, int, int) fees)  {
 
 	int query_id = in_msg~load_uint(64);
 	ifnot (op & (1 << 31)) {
-		;; unknown query, return error
+		;; unsupported query, return error
 		return send_receipt_message(s_addr, 0xffffffff, query_id, op, 0, 64);
 	}
 
-	;; unknown answer, ignore
 	return ();
 }
 

@@ -323,7 +323,7 @@ declare module "tonweb" {
 			"@extra": string
 		}
 
-		type MethodId = string | number
+		export type MethodId = string | number
 
 		type CallMethodParams = [string, any][]
 
@@ -470,11 +470,11 @@ declare module "tonweb" {
 			data?: boc.Cell
 		}
 
-		export interface MethodCallerRequest {
-			call: () => Promise<any>
+		export interface MethodCallerRequest<T> {
+			call: () => Promise<T | null | undefined>
 		}
 
-		export type MethodCaller = () => MethodCallerRequest
+		export type MethodCaller<T> = () => MethodCallerRequest<T>
 
 		export interface MethodSenderRequest {
 			send: () => Promise<providers.Send | providers.Error>
@@ -485,7 +485,7 @@ declare module "tonweb" {
 		export type MethodSender = (...args: any[]) => MethodSenderRequest
 
 		export interface Methods {
-			[methodName: string]: MethodCaller | MethodSender
+			[methodName: string]: MethodCaller<any> | MethodSender
 		}
 
 		export interface Options {

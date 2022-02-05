@@ -1,20 +1,9 @@
 import TonWeb, { contract, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
-import Bridge from "../contract/bridge"
+import Bridge, { BridgeData } from "../contract/bridge"
 
 import BaseManager from "./base"
-
-export type BridgeData = [
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-]
 
 class BridgeManager extends BaseManager {
 	public constructor(
@@ -105,8 +94,8 @@ class BridgeManager extends BaseManager {
 					this.collectorAddress,
 				),
 				initialFees: {
-					flatReward,
-					networkFee,
+					flatReward: utils.toNano(flatReward),
+					networkFee: utils.toNano(networkFee),
 					factor: feeFactor,
 				},
 			})
@@ -119,7 +108,7 @@ class BridgeManager extends BaseManager {
 			const deployResponse = await deployRequest.send()
 			this.printResponse(
 				deployResponse,
-				`Contract was deployed successfully`,
+				`Bridge was deployed successfully`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)
@@ -138,10 +127,10 @@ class BridgeManager extends BaseManager {
 			const addressInfo = await this.tonweb.provider.getAddressInfo(
 				contractAddress,
 			)
-			const bridgeData: BridgeData | null = await (
-				contract.methods.bridgeData() as contract.MethodCallerRequest
+			const bridgeData = await (
+				contract.methods.bridgeData() as contract.MethodCallerRequest<BridgeData>
 			).call()
-			if (!bridgeData) {
+			if (bridgeData == null) {
 				this.printAddressInfo(tonContractAddress, addressInfo)
 				return
 			}
@@ -190,10 +179,10 @@ class BridgeManager extends BaseManager {
 			const mnemonic = await this.loadMnemonic(contractAddress)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const bridgeData: BridgeData | null = await (
-				contract.methods.bridgeData() as contract.MethodCallerRequest
+			const bridgeData = await (
+				contract.methods.bridgeData() as contract.MethodCallerRequest<BridgeData>
 			).call()
-			if (!bridgeData) {
+			if (bridgeData == null) {
 				throw new Error(`Unable to get bridge data`)
 			}
 
@@ -210,7 +199,7 @@ class BridgeManager extends BaseManager {
 			const changeCollectorResponse = await changeCollectorRequest.send()
 			this.printResponse(
 				changeCollectorResponse,
-				`Bridge collector changed successfully`,
+				`Bridge collector was changed successfully`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)
@@ -234,10 +223,10 @@ class BridgeManager extends BaseManager {
 			const mnemonic = await this.loadMnemonic(contractAddress)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const bridgeData: BridgeData | null = await (
-				contract.methods.bridgeData() as contract.MethodCallerRequest
+			const bridgeData = await (
+				contract.methods.bridgeData() as contract.MethodCallerRequest<BridgeData>
 			).call()
-			if (!bridgeData) {
+			if (bridgeData == null) {
 				throw new Error(`Unable to get bridge data`)
 			}
 
@@ -256,7 +245,7 @@ class BridgeManager extends BaseManager {
 			const changeCollectorResponse = await changeCollectorRequest.send()
 			this.printResponse(
 				changeCollectorResponse,
-				`Bridge fees changed successfully`,
+				`Bridge fees were changed successfully`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)
@@ -283,10 +272,10 @@ class BridgeManager extends BaseManager {
 			const mnemonic = await this.loadMnemonic(contractAddress)
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
 
-			const bridgeData: BridgeData | null = await (
-				contract.methods.bridgeData() as contract.MethodCallerRequest
+			const bridgeData = await (
+				contract.methods.bridgeData() as contract.MethodCallerRequest<BridgeData>
 			).call()
-			if (!bridgeData) {
+			if (bridgeData == null) {
 				throw new Error(`Unable to get bridge data`)
 			}
 
