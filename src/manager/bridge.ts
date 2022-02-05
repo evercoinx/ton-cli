@@ -53,19 +53,19 @@ class BridgeManager extends BaseManager {
 				true,
 				true,
 			)
-			await this.saveMnemonic(bounceableAddress, mnemonic)
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
-
 			const feeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
+			await this.saveMnemonic(bounceableAddress, mnemonic)
+
+			this.logger.info(`Bridge is ready to be deployed`)
 			const nonBounceableAddress = tonContractAddress.toString(
 				true,
 				true,
 				false,
 			)
-			this.logger.info(`Bridge is ready to be deployed`)
 
 			if (feeResponse["@type"] === "query.fees") {
 				const fees = this.getTransactionFees(feeResponse.source_fees)

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import "dotenv/config"
 import joi from "joi"
 import TonWeb, { HttpProvider } from "tonweb"

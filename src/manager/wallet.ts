@@ -15,12 +15,13 @@ class WalletManager extends BaseManager {
 		super(logger)
 
 		const wallets = new Wallets(tonweb.provider)
-		this.Contract = wallets.all[version]
+		this.Contract = wallets.all[this.version]
 	}
 
 	public async prepare(workchain = 0): Promise<void> {
 		try {
 			this.logger.info(`Prepare wallet:`)
+			this.logger.info(`Wallet version: ${this.version}`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
 			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
@@ -36,20 +37,28 @@ class WalletManager extends BaseManager {
 				true,
 				true,
 			)
-			await this.saveMnemonic(bounceableAddress, mnemonic)
 
 			const deployRequest = await contract.deploy(keyPair.secretKey)
-
 			const feeResponse = await deployRequest.estimateFee()
 			this.printFees(feeResponse)
 
+			await this.saveMnemonic(bounceableAddress, mnemonic)
+
+			this.logger.info(`Wallet is ready to be deployed`)
 			const nonBounceableAddress = tonContractAddress.toString(
 				true,
 				true,
 				false,
 			)
-			this.logger.info(`Wallet is ready to be deployed`)
-			this.logger.info(`Send some TON coin to ${nonBounceableAddress}`)
+
+			if (feeResponse["@type"] === "query.fees") {
+				const fees = this.getTransactionFees(feeResponse.source_fees)
+				this.logger.info(
+					`Send at least ${this.formatAmount(
+						fees.totalFee,
+					)} to ${nonBounceableAddress}`,
+				)
+			}
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
@@ -58,6 +67,7 @@ class WalletManager extends BaseManager {
 	public async deploy(contractAddress: string): Promise<void> {
 		try {
 			this.logger.info(`Deploy wallet:`)
+			this.logger.info(`Wallet version: ${this.version}`)
 
 			const tonContractAddress = new utils.Address(contractAddress)
 			if (!tonContractAddress.isUserFriendly) {
@@ -95,6 +105,7 @@ class WalletManager extends BaseManager {
 	public async info(address: string): Promise<void> {
 		try {
 			this.logger.info(`Get wallet information:`)
+			this.logger.info(`Wallet version: ${this.version}`)
 
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
@@ -119,8 +130,8 @@ class WalletManager extends BaseManager {
 		sender: string,
 		recipient: string,
 		amount: number,
-		stateInit: boolean,
-		memo: string,
+		stateInit = false,
+		memo = "",
 	): Promise<void> {
 		try {
 			this.logger.info(`Transfer TON between wallets:`)
@@ -195,7 +206,9 @@ class WalletManager extends BaseManager {
 				transferResponse,
 				`${this.formatAmount(
 					amountNano,
-				)} were transferred successfully`,
+				)} were transferred successfully\n${
+					memo ? `Memo: ${memo}` : `No memo`
+				}`,
 			)
 		} catch (err: unknown) {
 			this.logger.error(err)

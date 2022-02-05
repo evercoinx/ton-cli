@@ -157,7 +157,10 @@ abstract class BaseManager {
 				`code: ${response.code}, message: ${response.message}`,
 			)
 		}
-		this.logger.info(successMessage)
+
+		successMessage
+			.split("\n")
+			.forEach((message: string) => this.logger.info(message))
 	}
 }
 

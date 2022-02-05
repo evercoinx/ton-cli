@@ -96,18 +96,18 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 (slice, (int)) ~load_text_hex_number(slice comment, int byte_length) {
 	throw_unless(329, comment~load_uint(16) == 12408); ;; "0x"
 
-	int current_slice_length = comment.slice_bits() / 8;
+	int cur_slice_len = comment.slice_bits() / 8;
 	int result = 0;
 	int counter = 0;
 
 	repeat (2 * byte_length) {
 		result = result * 16 + comment~load_hex_symbol();
 		counter = counter + 1;
-		if (counter == current_slice_length) {
+		if (counter == cur_slice_len) {
 			if (comment.slice_refs() == 1) {
 				cell _cont = comment~load_ref();
 				comment = _cont.begin_parse();
-				current_slice_length = comment.slice_bits() / 8;
+				cur_slice_len = comment.slice_bits() / 8;
 				counter = 0;
 			}
 		}
@@ -118,10 +118,10 @@ builder store_fees(builder b, (int, int, int) fees) inline {
 
 int calculate_fee(int msg_value, (int, int, int) fees)  {
     var (flat_reward, network_fee, factor) = fees;
-    var remain = msg_value - flat_reward - network_fee;
-    throw_unless(400, remain > 0);
+    var remaining_value = msg_value - flat_reward - network_fee;
+    throw_unless(400, remaining_value > 0);
 
-    int percent_fee = remain * factor / 10000;
+    int percent_fee = remaining_value * factor / 10000;
     return flat_reward + network_fee + percent_fee;
 }
 
