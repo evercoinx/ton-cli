@@ -1,9 +1,9 @@
 declare module "tonweb" {
-	import * as BN from "bignumber.js"
+	import { BigNumber } from "bignumber.js"
 	import nacl from "tweetnacl"
 
 	declare namespace utils {
-		export const BN: BN
+		export const BigNumber: BigNumber
 
 		export const nacl: nacl
 
@@ -29,9 +29,9 @@ declare module "tonweb" {
 
 		export function sha256(bytes: Uint8Array): Promise<ArrayBuffer>
 
-		export function fromNano(amount: number | BN | string): string
+		export function fromNano(amount: number | BigNumber | string): string
 
-		export function toNano(amount: number | BN | string): BN
+		export function toNano(amount: number | BigNumber | string): BigNumber
 
 		export function bytesToHex(buffer: Uint8Array): string
 
@@ -85,9 +85,12 @@ declare module "tonweb" {
 
 			public writeBitArray(ba: Array<boolean | number>): void
 
-			public writeUint(number: number | BN, bitLength: number): void
+			public writeUint(
+				number: number | BigNumber,
+				bitLength: number,
+			): void
 
-			public writeInt(number: number | BN, bitLength: number): void
+			public writeInt(number: number | BigNumber, bitLength: number): void
 
 			public writeUint8(ui8: number): void
 
@@ -95,7 +98,7 @@ declare module "tonweb" {
 
 			public writeString(s: string): void
 
-			public writeGrams(amount: number | BN): void
+			public writeGrams(amount: number | BigNumber): void
 
 			public writeAddress(address?: utils.Address | null): void
 
@@ -523,21 +526,21 @@ declare module "tonweb" {
 			public static createExternalMessageHeader(
 				dest: utils.Address | string,
 				src?: utils.Address | string,
-				importFee?: number | BN = 0,
+				importFee?: number | BigNumber = 0,
 			): boc.Cell
 
 			public static createInternalMessageHeader(
 				dest: utils.Address | string,
-				gramValue?: number | BN = 0,
+				gramValue?: number | BigNumber = 0,
 				ihrDisabled? = true,
 				bounce?: boolean,
 				bounced? = false,
 				src?: utils.Address | string,
 				currencyCollection?: undefined,
-				ihrFees?: number | BN = 0,
-				fwdFees?: number | BN = 0,
-				createdLt?: number | BN = 0,
-				createdAt?: number | BN = 0,
+				ihrFees?: number | BigNumber = 0,
+				fwdFees?: number | BigNumber = 0,
+				createdLt?: number | BigNumber = 0,
+				createdAt?: number | BigNumber = 0,
 			): boc.Cell
 
 			public static createCommonMsgInfo(

@@ -1,4 +1,5 @@
 import fs from "fs/promises"
+import { BigNumber } from "bignumber.js"
 import tonMnemonic = require("tonweb-mnemonic")
 import { providers, utils } from "tonweb"
 import { Logger } from "winston"
@@ -71,7 +72,10 @@ abstract class BaseManager {
 		return addressMnemonic
 	}
 
-	protected formatAmount(amountNano: number | string): string {
+	protected formatAmount(amountNano: string | number | BigNumber): string {
+		if (amountNano instanceof BigNumber) {
+			return `${utils.fromNano(amountNano)} TON`
+		}
 		const amount = parseFloat(utils.fromNano(amountNano))
 		return `${amount.toFixed(9)} TON`
 	}

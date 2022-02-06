@@ -1,3 +1,4 @@
+import { BigNumber } from "bignumber.js"
 import TonWeb, { contract, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
@@ -32,7 +33,7 @@ class BridgeManager extends BaseManager {
 				initialFees: {
 					flatReward: utils.toNano(flatReward),
 					networkFee: utils.toNano(networkFee),
-					factor: feeFactor,
+					factor: new BigNumber(feeFactor),
 				},
 			})
 
@@ -96,7 +97,7 @@ class BridgeManager extends BaseManager {
 				initialFees: {
 					flatReward: utils.toNano(flatReward),
 					networkFee: utils.toNano(networkFee),
-					factor: feeFactor,
+					factor: new BigNumber(feeFactor),
 				},
 			})
 
@@ -147,13 +148,15 @@ class BridgeManager extends BaseManager {
 			] = bridgeData
 
 			this.printAddressInfo(tonContractAddress, addressInfo)
-			this.logger.info(`Sequence number: ${seqno}`)
-			this.logger.info(`Public key: ${publicKey}`)
-			this.logger.info(`Total locked: ${totalLocked}`)
-			this.logger.info(`Collector address: ${wc}:${addr}`)
-			this.logger.info(`Flat reward: ${flatReward}`)
-			this.logger.info(`Network fee: ${networkFee}`)
-			this.logger.info(`Factor: ${factor}`)
+			this.logger.info(`Sequence number: ${seqno.toNumber()}`)
+			this.logger.info(`Public key: ${publicKey.toString(16)}`)
+			this.logger.info(`Total locked: ${this.formatAmount(totalLocked)}`)
+			this.logger.info(
+				`Collector address: ${wc.toNumber()}:${addr.toString(16)}`,
+			)
+			this.logger.info(`Flat reward: ${this.formatAmount(flatReward)}`)
+			this.logger.info(`Network fee: ${this.formatAmount(networkFee)}`)
+			this.logger.info(`Factor: ${factor.toNumber()}`)
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}

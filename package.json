@@ -22,6 +22,7 @@
         "start": "npm run build && node ."
     },
     "dependencies": {
+        "bignumber.js": "9.0.2",
         "dotenv": "14.3.2",
         "joi": "17.6.0",
         "tonweb": "git+https://github.com/toncenter/tonweb.git",

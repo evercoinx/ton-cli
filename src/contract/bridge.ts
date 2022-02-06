@@ -1,20 +1,21 @@
 import { boc, Contract, contract, providers, utils } from "tonweb"
+import { BigNumber } from "bignumber.js"
 
 export type BridgeData = [
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
-	typeof utils.BN,
+	BigNumber,
+	BigNumber,
+	BigNumber,
+	BigNumber,
+	BigNumber,
+	BigNumber,
+	BigNumber,
+	BigNumber,
 ]
 
 interface BridgeFeeOptions {
-	flatReward: number
-	networkFee: number
-	factor: number
+	flatReward: BigNumber
+	networkFee: BigNumber
+	factor: BigNumber
 }
 
 export interface BridgeOptions extends contract.Options {
