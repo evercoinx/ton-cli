@@ -1,21 +1,12 @@
+import BN from "bn.js"
 import { boc, Contract, contract, providers, utils } from "tonweb"
-import { BigNumber } from "bignumber.js"
 
-export type BridgeData = [
-	BigNumber,
-	BigNumber,
-	BigNumber,
-	BigNumber,
-	BigNumber,
-	BigNumber,
-	BigNumber,
-	BigNumber,
-]
+export type BridgeData = [BN, BN, BN, BN, BN, BN, BN, BN]
 
 interface BridgeFeeOptions {
-	flatReward: BigNumber
-	networkFee: BigNumber
-	factor: BigNumber
+	flatReward: BN
+	networkFee: BN
+	factor: BN
 }
 
 export interface BridgeOptions extends contract.Options {

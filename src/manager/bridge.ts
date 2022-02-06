@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js"
+import BN from "bn.js"
 import TonWeb, { contract, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
@@ -33,7 +33,7 @@ class BridgeManager extends BaseManager {
 				initialFees: {
 					flatReward: utils.toNano(flatReward),
 					networkFee: utils.toNano(networkFee),
-					factor: new BigNumber(feeFactor),
+					factor: new BN(feeFactor),
 				},
 			})
 
@@ -97,7 +97,7 @@ class BridgeManager extends BaseManager {
 				initialFees: {
 					flatReward: utils.toNano(flatReward),
 					networkFee: utils.toNano(networkFee),
-					factor: new BigNumber(feeFactor),
+					factor: new BN(feeFactor),
 				},
 			})
 

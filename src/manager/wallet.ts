@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js"
+import BN from "bn.js"
 import TonWeb, { contract, utils, Wallets } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
@@ -174,7 +174,7 @@ class WalletManager extends BaseManager {
 
 			const amountNano = utils.toNano(amount)
 			const senderBalance = await this.tonweb.getBalance(sender)
-			if (amountNano.gt(new BigNumber(senderBalance))) {
+			if (amountNano.gt(new BN(senderBalance))) {
 				throw new Error(
 					`Transfer amount ${this.formatAmount(
 						amountNano,
@@ -183,7 +183,7 @@ class WalletManager extends BaseManager {
 			}
 
 			const seqno = await (
-				contract.methods.seqno() as contract.MethodCallerRequest<BigNumber>
+				contract.methods.seqno() as contract.MethodCallerRequest<BN>
 			).call()
 			if (seqno == null) {
 				throw new Error(`Wallet sequence number is undefined`)

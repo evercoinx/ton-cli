@@ -22,7 +22,7 @@
         "start": "npm run build && node ."
     },
     "dependencies": {
-        "bignumber.js": "9.0.2",
+        "bn.js": "5.2.0",
         "dotenv": "14.3.2",
         "joi": "17.6.0",
         "tonweb": "git+https://github.com/toncenter/tonweb.git",
@@ -31,7 +31,8 @@
         "yargs": "17.3.1"
     },
     "devDependencies": {
-        "@types/node": "17.0.14",
+        "@types/bn.js": "5.1.0",
+        "@types/node": "17.0.15",
         "@types/yargs": "17.0.8",
         "@typescript-eslint/eslint-plugin": "5.10.2",
         "@typescript-eslint/parser": "5.10.2",
