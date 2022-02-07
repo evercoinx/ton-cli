@@ -231,7 +231,7 @@ declare module "tonweb" {
 			last_transaction_id: TransactionId
 		}
 
-		interface Message {
+		export interface Message {
 			"@type": "raw.message"
 			source: string
 			destination: string
@@ -247,7 +247,7 @@ declare module "tonweb" {
 			message: string
 		}
 
-		interface Transaction {
+		export interface Transaction {
 			"@type": "raw.transaction"
 			utime: number
 			data: string

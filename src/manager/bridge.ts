@@ -1,5 +1,5 @@
 import BN from "bn.js"
-import TonWeb, { contract, utils } from "tonweb"
+import TonWeb, { contract, providers, utils } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
 import { Logger } from "winston"
 import Bridge, { BridgeData } from "../contract/bridge"
@@ -300,6 +300,92 @@ class BridgeManager extends BaseManager {
 		} catch (err: unknown) {
 			this.logger.error(err)
 		}
+	}
+
+	public async logEvents(contractAddress: string): Promise<void> {
+		try {
+			this.logger.info(`Get log events:`)
+
+			if (!utils.Address.isValid(contractAddress)) {
+				throw new Error(`Invalid contract address`)
+			}
+
+			const response = await this.tonweb.getTransactions(contractAddress)
+			if (!Array.isArray(response)) {
+				throw new Error(
+					`code: ${response.code}, message: ${response.message}`,
+				)
+			}
+
+			for (const transaction of response) {
+				const logMessage = this.findLogMessage(transaction.out_msgs)
+				if (!logMessage) {
+					continue
+				}
+
+				const messageText = logMessage.message.slice(0, -1) // remove '\n' from end
+				const messageBytes = utils.base64ToBytes(messageText)
+				if (messageBytes.length !== 28) {
+					continue
+				}
+
+				const destinationAddress = this.normalizeAddress(
+					"0x" + utils.bytesToHex(messageBytes.slice(0, 20)),
+				)
+				const amountHex = utils.bytesToHex(messageBytes.slice(20, 28))
+				const amount = new BN(amountHex, 16)
+				const senderAddress = new utils.Address(
+					transaction.in_msg.source,
+				)
+
+				const event = {
+					type: "SwapTonToEth",
+					receiver: destinationAddress,
+					amount: amount.toString(),
+					tx: {
+						address: {
+							workchain: senderAddress.wc,
+							address_hash:
+								"0x" + utils.bytesToHex(senderAddress.hashPart),
+						},
+						tx_hash:
+							"0x" +
+							utils.bytesToHex(
+								utils.base64ToBytes(
+									transaction.transaction_id.hash,
+								),
+							),
+						lt: transaction.transaction_id.lt,
+					},
+				}
+				this.logger.info(event)
+			}
+		} catch (err: unknown) {
+			this.logger.error(err)
+		}
+	}
+
+	private findLogMessage(
+		messages: providers.Message[],
+	): providers.Message | undefined {
+		for (const message of messages) {
+			if (message.destination === "") {
+				return message
+			}
+		}
+	}
+
+	private normalizeAddress(address: string): string {
+		if (!address.startsWith("0x")) {
+			throw new Error(`Invalid address: ${address}`)
+		}
+
+		let hex = address.slice(2)
+		while (hex.length < 40) {
+			hex = `0${hex}`
+			console.log(hex)
+		}
+		return `0x${hex}`
 	}
 }
 

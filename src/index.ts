@@ -238,6 +238,19 @@ const createInfoCommand = (contract: string) => ({
 				)
 			},
 		})
+		.command({
+			command: "logevents <contract>",
+			aliases: ["ble"],
+			describe: "Get log events",
+			builder: (yargs: Argv) =>
+				yargs.positional("contract", {
+					describe: "Contract address",
+				}),
+			handler: async (argv: any) => {
+				const { contract } = argv
+				await contractToManager[bridgeContract].logEvents(contract)
+			},
+		})
 
 		.strictCommands()
 		.demandCommand(1)

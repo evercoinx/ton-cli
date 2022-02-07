@@ -8,6 +8,9 @@ function createNewLogger(env: string): Logger {
 			format.errors({ stack: true }),
 			format.timestamp({ format: "HH:mm:ss.SSS" }),
 			format.printf(({ timestamp, level, message, stack }) => {
+				if (message.constructor === Object) {
+					message = JSON.stringify(message, null, 4)
+				}
 				const prefix = `> ${timestamp} - ${level}`
 				return stack ? `${prefix} ${stack}` : `${prefix} ${message}`
 			}),
