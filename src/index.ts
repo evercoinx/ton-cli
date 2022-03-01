@@ -12,8 +12,9 @@ const schema = joi
 	.object()
 	.keys({
 		NODE_ENV: joi.string().valid("production", "development").required(),
-		NODE_HTTP_PROVIDER_HOST: joi.string().uri().required(),
-		NODE_WALLET_VERSION: joi
+		HTTP_PROVIDER_HOST: joi.string().uri().required(),
+		HTTP_PROVIDER_API_KEY: joi.string().alphanum().length(64).required(),
+		WALLET_VERSION: joi
 			.string()
 			.valid(
 				"simpleR1",
@@ -27,10 +28,10 @@ const schema = joi
 				"v4R2",
 			)
 			.required(),
-		NODE_COLLECTOR_ADDRESS: joi.string().required(),
-		NODE_FLAT_REWARD: joi.number().precision(9).max(1000).required(),
-		NODE_NETWORK_FEE: joi.number().precision(9).max(1000).required(),
-		NODE_FEE_FACTOR: joi.number().precision(0).max(10000).required(),
+		COLLECTOR_ADDRESS: joi.string().required(),
+		FLAT_REWARD: joi.number().precision(9).max(1000).required(),
+		NETWORK_FEE: joi.number().precision(9).max(1000).required(),
+		FEE_FACTOR: joi.number().precision(0).max(10000).required(),
 	})
 	.unknown()
 
@@ -42,32 +43,26 @@ if (error) {
 	throw new Error(`Environment validation error: ${error.message}`)
 }
 
-const provider = new HttpProvider(envVars.NODE_HTTP_PROVIDER_HOST)
-const tonweb = new TonWeb(provider)
+const WALLET_CONTRACT = "wallet"
+const BRDIGE_CONTRACT = "bridge"
 
-const walletContract = "wallet"
-const bridgeContract = "bridge"
+const httpProvider = new HttpProvider(envVars.HTTP_PROVIDER_HOST, {
+	apiKey: envVars.HTTP_PROVIDER_API_KEY,
+})
+const tonweb = new TonWeb(httpProvider)
 
 const logger = createLogger(envVars.NODE_ENV)
-const walletManager = new WalletManager(
-	tonweb,
-	logger,
-	envVars.NODE_WALLET_VERSION,
-)
+const walletManager = new WalletManager(tonweb, logger, envVars.WALLET_VERSION)
 const bridgeManager = new BridgeManager(
 	tonweb,
 	logger,
-	envVars.NODE_COLLECTOR_ADDRESS,
-	[
-		envVars.NODE_FLAT_REWARD,
-		envVars.NODE_NETWORK_FEE,
-		envVars.NODE_FEE_FACTOR,
-	],
+	envVars.COLLECTOR_ADDRESS,
+	[envVars.FLAT_REWARD, envVars.NETWORK_FEE, envVars.FEE_FACTOR],
 )
 
 const contractToManager = {
-	[walletContract]: walletManager,
-	[bridgeContract]: bridgeManager,
+	[WALLET_CONTRACT]: walletManager,
+	[BRDIGE_CONTRACT]: bridgeManager,
 }
 
 const createPrepareCommand = (contract: string) => ({
@@ -123,9 +118,9 @@ const createInfoCommand = (contract: string) => ({
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
 
-		.command(createPrepareCommand(walletContract))
-		.command(createDeployCommand(walletContract))
-		.command(createInfoCommand(walletContract))
+		.command(createPrepareCommand(WALLET_CONTRACT))
+		.command(createDeployCommand(WALLET_CONTRACT))
+		.command(createInfoCommand(WALLET_CONTRACT))
 		.command({
 			command:
 				"wallettransfer <sender> <recipient> <amount> [stateinit] [memo]",
@@ -155,7 +150,7 @@ const createInfoCommand = (contract: string) => ({
 					}),
 			handler: async (argv: any) => {
 				const { sender, recipient, amount, stateinit, memo } = argv
-				await contractToManager[walletContract].transfer(
+				await contractToManager[WALLET_CONTRACT].transfer(
 					sender,
 					recipient,
 					amount,
@@ -165,9 +160,9 @@ const createInfoCommand = (contract: string) => ({
 			},
 		})
 
-		.command(createPrepareCommand(bridgeContract))
-		.command(createDeployCommand(bridgeContract))
-		.command(createInfoCommand(bridgeContract))
+		.command(createPrepareCommand(BRDIGE_CONTRACT))
+		.command(createDeployCommand(BRDIGE_CONTRACT))
+		.command(createInfoCommand(BRDIGE_CONTRACT))
 		.command({
 			command: "changecollector <contract> <collector>",
 			aliases: ["bcc"],
@@ -182,7 +177,7 @@ const createInfoCommand = (contract: string) => ({
 					}),
 			handler: async (argv: any) => {
 				const { contract, collector } = argv
-				await contractToManager[bridgeContract].changeCollector(
+				await contractToManager[BRDIGE_CONTRACT].changeCollector(
 					contract,
 					collector,
 				)
@@ -214,7 +209,7 @@ const createInfoCommand = (contract: string) => ({
 					.coerce("factor", (opt: string) => parseInt(opt)),
 			handler: async (argv: any) => {
 				const { contract, flatreward, networkfee, factor } = argv
-				await contractToManager[bridgeContract].changeFees(
+				await contractToManager[BRDIGE_CONTRACT].changeFees(
 					contract,
 					flatreward,
 					networkfee,
@@ -236,7 +231,7 @@ const createInfoCommand = (contract: string) => ({
 					}),
 			handler: async (argv: any) => {
 				const { contract, beneficiary } = argv
-				await contractToManager[bridgeContract].withdrawReward(
+				await contractToManager[BRDIGE_CONTRACT].withdrawReward(
 					contract,
 					beneficiary,
 				)
@@ -252,7 +247,7 @@ const createInfoCommand = (contract: string) => ({
 				}),
 			handler: async (argv: any) => {
 				const { contract } = argv
-				await contractToManager[bridgeContract].logEvents(contract)
+				await contractToManager[BRDIGE_CONTRACT].logEvents(contract)
 			},
 		})
 
