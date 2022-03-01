@@ -163,6 +163,10 @@ abstract class BaseManager {
 			.split("\n")
 			.forEach((message: string) => this.logger.info(message))
 	}
+
+	protected hexToBytes(hex: string): Uint8Array {
+		return Uint8Array.from(Buffer.from(hex, "hex"))
+	}
 }
 
 export default BaseManager

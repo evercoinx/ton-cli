@@ -1,6 +1,7 @@
 import BN from "bn.js"
 import TonWeb, { contract, utils, Wallets } from "tonweb"
 import tonMnemonic = require("tonweb-mnemonic")
+import nacl from "tweetnacl"
 import { Logger } from "winston"
 
 import BaseManager, { SendMode } from "./base"
@@ -65,7 +66,10 @@ class WalletManager extends BaseManager {
 		}
 	}
 
-	public async deploy(contractAddress: string): Promise<void> {
+	public async deploy(
+		contractAddress: string,
+		secretKey?: string,
+	): Promise<void> {
 		try {
 			this.logger.info(`Deploy wallet:`)
 			this.logger.info(`Wallet version: ${this.version}`)
@@ -80,8 +84,15 @@ class WalletManager extends BaseManager {
 				throw new Error(`Contract address should be bounceable`)
 			}
 
-			const mnemonic = await this.loadMnemonic(contractAddress)
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+			let keyPair: nacl.BoxKeyPair | tonMnemonic.KeyPair
+			if (secretKey) {
+				keyPair = nacl.box.keyPair.fromSecretKey(
+					this.hexToBytes(secretKey),
+				)
+			} else {
+				const mnemonic = await this.loadMnemonic(contractAddress)
+				keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+			}
 
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,

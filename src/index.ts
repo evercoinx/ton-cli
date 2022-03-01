@@ -88,16 +88,20 @@ const createPrepareCommand = (contract: string) => ({
 })
 
 const createDeployCommand = (contract: string) => ({
-	command: `${contract}deploy <address>`,
+	command: `${contract}deploy <address> [secretKey]`,
 	aliases: [`${contract[0]}d`],
 	describe: `Deploy ${contract}`,
 	builder: (yargs: Argv) =>
-		yargs.positional("address", {
-			describe: "Contract address",
-		}),
+		yargs
+			.positional("address", {
+				describe: "Contract address",
+			})
+			.positional("secretKey", {
+				describe: "Secret key",
+			}),
 	handler: async (argv: any) => {
-		const { address } = argv
-		await contractToManager[contract].deploy(address)
+		const { address, secretKey } = argv
+		await contractToManager[contract].deploy(address, secretKey)
 	},
 })
 
