@@ -16,7 +16,7 @@ class BridgeManager extends BaseManager {
 		super(logger)
 	}
 
-	public async prepare(workchain = 0): Promise<void> {
+	public async create(workchain = 0): Promise<void> {
 		try {
 			this.logger.info(`Prepare bridge:`)
 

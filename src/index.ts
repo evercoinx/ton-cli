@@ -65,10 +65,10 @@ const contractToManager = {
 	[BRDIGE_CONTRACT]: bridgeManager,
 }
 
-const createPrepareCommand = (contract: string) => ({
-	command: `${contract}prepare [wc]`,
-	aliases: [`${contract[0]}p`],
-	describe: `Prepare ${contract}`,
+const getCreateCommand = (contract: string) => ({
+	command: `${contract}create [wc]`,
+	aliases: [`${contract[0]}c`],
+	describe: `Create ${contract}`,
 	builder: (yargs: Argv) =>
 		yargs
 			.positional("wc", {
@@ -78,11 +78,11 @@ const createPrepareCommand = (contract: string) => ({
 			.coerce("wc", (opt: string) => parseInt(opt)),
 	handler: async (argv: any) => {
 		const { wc } = argv
-		await contractToManager[contract].prepare(wc)
+		await contractToManager[contract].create(wc)
 	},
 })
 
-const createDeployCommand = (contract: string) => ({
+const getDeployCommand = (contract: string) => ({
 	command: `${contract}deploy <address> [secretKey]`,
 	aliases: [`${contract[0]}d`],
 	describe: `Deploy ${contract}`,
@@ -100,7 +100,7 @@ const createDeployCommand = (contract: string) => ({
 	},
 })
 
-const createInfoCommand = (contract: string) => ({
+const getInfoCommand = (contract: string) => ({
 	command: `${contract}info <address>`,
 	aliases: [`${contract[0]}i`],
 	describe: `Get ${contract} information`,
@@ -118,9 +118,9 @@ const createInfoCommand = (contract: string) => ({
 	yargs(hideBin(process.argv))
 		.usage("$0 <cmd> [args]")
 
-		.command(createPrepareCommand(WALLET_CONTRACT))
-		.command(createDeployCommand(WALLET_CONTRACT))
-		.command(createInfoCommand(WALLET_CONTRACT))
+		.command(getCreateCommand(WALLET_CONTRACT))
+		.command(getDeployCommand(WALLET_CONTRACT))
+		.command(getInfoCommand(WALLET_CONTRACT))
 		.command({
 			command:
 				"wallettransfer <sender> <recipient> <amount> [stateinit] [memo]",
@@ -160,9 +160,9 @@ const createInfoCommand = (contract: string) => ({
 			},
 		})
 
-		.command(createPrepareCommand(BRDIGE_CONTRACT))
-		.command(createDeployCommand(BRDIGE_CONTRACT))
-		.command(createInfoCommand(BRDIGE_CONTRACT))
+		.command(getCreateCommand(BRDIGE_CONTRACT))
+		.command(getDeployCommand(BRDIGE_CONTRACT))
+		.command(getInfoCommand(BRDIGE_CONTRACT))
 		.command({
 			command: "changecollector <contract> <collector>",
 			aliases: ["bcc"],

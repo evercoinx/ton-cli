@@ -32,7 +32,7 @@ abstract class BaseManager {
 
 	public constructor(protected logger: Logger) {}
 
-	public abstract prepare(workchain: number): Promise<void>
+	public abstract create(workchain: number): Promise<void>
 
 	public abstract deploy(contractAddress: string): Promise<void>
 

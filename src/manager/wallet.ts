@@ -20,9 +20,9 @@ class WalletManager extends BaseManager {
 		this.Contract = wallets.all[this.version]
 	}
 
-	public async prepare(workchain = 0): Promise<void> {
+	public async create(workchain = 0): Promise<void> {
 		try {
-			this.logger.info(`Prepare wallet:`)
+			this.logger.info(`Create wallet:`)
 			this.logger.info(`Wallet version: ${this.version}`)
 
 			const mnemonic = await tonMnemonic.generateMnemonic()
@@ -72,7 +72,6 @@ class WalletManager extends BaseManager {
 	): Promise<void> {
 		try {
 			this.logger.info(`Deploy wallet:`)
-			this.logger.info(`Wallet version: ${this.version}`)
 
 			const tonContractAddress = new utils.Address(contractAddress)
 			if (!tonContractAddress.isUserFriendly) {
@@ -84,9 +83,9 @@ class WalletManager extends BaseManager {
 				throw new Error(`Contract address should be bounceable`)
 			}
 
-			let keyPair: nacl.BoxKeyPair | tonMnemonic.KeyPair
+			let keyPair: nacl.SignKeyPair | tonMnemonic.KeyPair
 			if (secretKey) {
-				keyPair = nacl.box.keyPair.fromSecretKey(
+				keyPair = nacl.sign.keyPair.fromSecretKey(
 					this.hexToBytes(secretKey),
 				)
 			} else {
@@ -117,7 +116,6 @@ class WalletManager extends BaseManager {
 	public async info(address: string): Promise<void> {
 		try {
 			this.logger.info(`Get wallet information:`)
-			this.logger.info(`Wallet version: ${this.version}`)
 
 			const contractAddress = new utils.Address(address)
 			const contract = new this.Contract(this.tonweb.provider, {
