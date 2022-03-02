@@ -144,6 +144,7 @@ class WalletManager extends BaseManager {
 		amount: number,
 		stateInit = false,
 		memo = "",
+		workchain = 0,
 		secretKey = "",
 	): Promise<void> {
 		try {
@@ -187,6 +188,7 @@ class WalletManager extends BaseManager {
 
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
+				wc: workchain,
 			})
 
 			const amountNano = utils.toNano(amount)

@@ -66,19 +66,19 @@ const contractToManager = {
 }
 
 const getCreateCommand = (contract: string) => ({
-	command: `${contract}create [wc]`,
+	command: `${contract}create [workchain]`,
 	aliases: [`${contract[0]}c`],
 	describe: `Create ${contract}`,
 	builder: (yargs: Argv) =>
 		yargs
-			.positional("wc", {
+			.positional("workchain", {
 				describe: "Workchain id. Defaults to 0",
 				default: 0,
 			})
-			.coerce("wc", (opt: string) => parseInt(opt)),
+			.coerce("workchain", (opt: string) => parseInt(opt)),
 	handler: async (argv: any) => {
-		const { wc } = argv
-		await contractToManager[contract].create(wc)
+		const { workchain } = argv
+		await contractToManager[contract].create(workchain)
 	},
 })
 
@@ -124,7 +124,7 @@ const getInfoCommand = (contract: string) => ({
 		.command(getInfoCommand(WALLET_CONTRACT))
 		.command({
 			command:
-				"wallettransfer <sender> <recipient> <amount> [stateInit] [memo] [secretKey]",
+				"wallettransfer <sender> <recipient> <amount> [stateInit] [memo] [workchain] [secretKey]",
 			aliases: ["wt"],
 			describe: "Transfer toncoins",
 			builder: (yargs: Argv) =>
@@ -149,6 +149,11 @@ const getInfoCommand = (contract: string) => ({
 						describe: "Transaction memo",
 						default: "",
 					})
+					.positional("workchain", {
+						describe: "Workchain id. Defaults to 0",
+						default: 0,
+					})
+					.coerce("workchain", (opt: string) => parseInt(opt))
 					.positional("secretKey", {
 						describe: "Secret key",
 						default: "",
@@ -160,6 +165,7 @@ const getInfoCommand = (contract: string) => ({
 					amount,
 					stateInit,
 					memo,
+					workchain,
 					secretKey,
 				} = argv
 				await contractToManager[WALLET_CONTRACT].transfer(
@@ -168,6 +174,7 @@ const getInfoCommand = (contract: string) => ({
 					amount,
 					stateInit,
 					memo,
+					workchain,
 					secretKey,
 				)
 			},
