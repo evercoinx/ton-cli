@@ -93,6 +93,7 @@ const getDeployCommand = (contract: string) => ({
 			})
 			.positional("secretKey", {
 				describe: "Secret key",
+				default: "",
 			}),
 	handler: async (argv: any) => {
 		const { address, secretKey } = argv
@@ -123,7 +124,7 @@ const getInfoCommand = (contract: string) => ({
 		.command(getInfoCommand(WALLET_CONTRACT))
 		.command({
 			command:
-				"wallettransfer <sender> <recipient> <amount> [stateinit] [memo]",
+				"wallettransfer <sender> <recipient> <amount> [stateInit] [memo] [secretKey]",
 			aliases: ["wt"],
 			describe: "Transfer toncoins",
 			builder: (yargs: Argv) =>
@@ -140,22 +141,34 @@ const getInfoCommand = (contract: string) => ({
 					.coerce("amount", (opt: string) => parseFloat(opt))
 					.positional("stateinit", {
 						describe:
-							"Check if address should be non-bounceable for stateinit operation",
+							"Check if address should be non-bounceable for state-init operation",
 						default: false,
 					})
-					.coerce("stateinit", (opt: string) => !!parseInt(opt))
+					.coerce("stateInit", (opt: string) => !!parseInt(opt))
 					.positional("memo", {
 						describe: "Transaction memo",
 						default: "",
+					})
+					.positional("secretKey", {
+						describe: "Secret key",
+						default: "",
 					}),
 			handler: async (argv: any) => {
-				const { sender, recipient, amount, stateinit, memo } = argv
+				const {
+					sender,
+					recipient,
+					amount,
+					stateInit,
+					memo,
+					secretKey,
+				} = argv
 				await contractToManager[WALLET_CONTRACT].transfer(
 					sender,
 					recipient,
 					amount,
-					stateinit,
+					stateInit,
 					memo,
+					secretKey,
 				)
 			},
 		})

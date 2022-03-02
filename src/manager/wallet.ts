@@ -68,7 +68,7 @@ class WalletManager extends BaseManager {
 
 	public async deploy(
 		contractAddress: string,
-		secretKey?: string,
+		secretKey = "",
 	): Promise<void> {
 		try {
 			this.logger.info(`Deploy wallet:`)
@@ -144,6 +144,7 @@ class WalletManager extends BaseManager {
 		amount: number,
 		stateInit = false,
 		memo = "",
+		secretKey = "",
 	): Promise<void> {
 		try {
 			this.logger.info(`Transfer TON between wallets:`)
@@ -174,8 +175,15 @@ class WalletManager extends BaseManager {
 				throw new Error(`Amount should be positive`)
 			}
 
-			const mnemonic = await this.loadMnemonic(sender)
-			const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+			let keyPair: nacl.SignKeyPair | tonMnemonic.KeyPair
+			if (secretKey) {
+				keyPair = nacl.sign.keyPair.fromSecretKey(
+					this.hexToBytes(secretKey),
+				)
+			} else {
+				const mnemonic = await this.loadMnemonic(sender)
+				keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonic)
+			}
 
 			const contract = new this.Contract(this.tonweb.provider, {
 				publicKey: keyPair.publicKey,
