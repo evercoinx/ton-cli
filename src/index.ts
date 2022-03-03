@@ -139,16 +139,16 @@ const getInfoCommand = (contract: string) => ({
 						describe: "Amount to transfer",
 					})
 					.coerce("amount", (opt: string) => parseFloat(opt))
-					.positional("stateinit", {
+					.positional("memo", {
+						describe: "Transaction memo",
+						default: "",
+					})
+					.positional("stateInit", {
 						describe:
 							"Check if address should be non-bounceable for state-init operation",
 						default: false,
 					})
 					.coerce("stateInit", (opt: string) => !!parseInt(opt))
-					.positional("memo", {
-						describe: "Transaction memo",
-						default: "",
-					})
 					.positional("workchain", {
 						describe: "Workchain id. Defaults to 0",
 						default: 0,
@@ -163,8 +163,8 @@ const getInfoCommand = (contract: string) => ({
 					sender,
 					recipient,
 					amount,
-					stateInit,
 					memo,
+					stateInit,
 					workchain,
 					secretKey,
 				} = argv
@@ -172,8 +172,8 @@ const getInfoCommand = (contract: string) => ({
 					sender,
 					recipient,
 					amount,
-					stateInit,
 					memo,
+					stateInit,
 					workchain,
 					secretKey,
 				)

@@ -142,8 +142,8 @@ class WalletManager extends BaseManager {
 		sender: string,
 		recipient: string,
 		amount: number,
-		stateInit = false,
 		memo = "",
+		stateInit = false,
 		workchain = 0,
 		secretKey = "",
 	): Promise<void> {
