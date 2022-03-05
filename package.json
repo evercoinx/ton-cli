@@ -1,6 +1,6 @@
 {
-	"name": "toncli",
-	"version": "0.1.0",
+	"name": "ton-cli",
+	"version": "0.0.1",
 	"description": "Command line tools for TON blockchain",
 	"main": "dist/index.js",
 	"repository": {
